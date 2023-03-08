@@ -1,0 +1,43 @@
+{% extends "budginator/layout.html" %}
+{% block content %}
+<div class="card">
+  <div class="card-header">Track</div>
+  <div class="card-body">
+    {% csrf_token %}
+    <form action="/transactions/track" method="post">
+      <div class="mb-3">
+        <label for="date" class="form-label">Date</label>
+        <input type="date" class="form-control" id="date" name="date">
+      </div>
+      <div class="mb-3">
+        <label for="merchant" class="form-label">Merchant</label>
+        <input type="text" class="form-control" id="merchant" name="merchant">
+      </div>
+      <div class="mb-3">
+        <label for="budget" class="form-label">Budget</label>
+        <select class="form-control" name="budget" id="budget">
+          {% for budget in budgets %}
+          <option value="{{ budget.id }}">{{ budget.icon }} {{ budget.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="amount" class="form-label">Amount</label>
+        <input type="text" inputmode="decimal" class="form-control" id="amount" name="amount">
+      </div>
+      <div class="mb-3">
+        <label for="multiplier" class="form-label">Debit/Credit</label>
+        <select class="form-control" id="multiplier" name="multiplier">
+          <option value="-1">Debit</option>
+          <option value="1">Credit</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="note" class="form-label">Note</label>
+        <input type="text" class="form-control" id="note" name="note">
+      </div>
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
