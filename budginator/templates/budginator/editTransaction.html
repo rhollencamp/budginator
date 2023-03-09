@@ -1,0 +1,102 @@
+{% extends "budginator/layout.html" %}
+{% block content %}
+  <div class="card">
+    <div class="card-header">Edit Transaction</div>
+    <div class="card-body">
+      <form action="/transactions/edit" id="editForm" method="post">
+        <input type="hidden" name="transaction" value="{{ transaction.id }}">
+        <div class="mb-3">
+          <label for="date" class="form-label">Date</label>
+          {% comment %} TODO readonly, date input type? {% endcomment %}
+          <input type="text" class="form-control" id="date" name="date" value="{{ transaction.date | date:"Y-m-d" }}">
+        </div>
+        <div class="mb-3">
+          <label for="merchant" class="form-label">Merchant</label>
+          {% comment %} TODO readonly {% endcomment %}
+          <input type="text" class="form-control" id="merchant" name="merchant" value="{{ transaction.merchant }}">
+        </div>
+        <div class="mb-3">
+          <label for="amount" class="form-label">Amount</label>
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            {% comment %} TODO readonly {% endcomment %}
+            <input type="text" class="form-control" id="amount" name="amount" value="{{ transaction.amount | amount }}">
+          </div>
+        </div>
+
+        <hr>
+
+        {% comment %} splits that already exist {% endcomment %}
+        {% for split in transaction.splits.all %}
+        <div class="row mb-3">
+          <div class="col">
+            <select class="form-control" name="splitBudget">
+              <option></option>
+              {% for budget in budgets %}
+              <option value="{{ budget.id }}" {% if budget.name == split.budget.name %}selected="selected"{% endif %}>
+                {{ budget.icon }} {{ budget.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col">
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="text" class="form-control" name="splitAmount" value="{{ split.amount | amount }}">
+            </div>
+          </div>
+          <div class="col-6">
+            <input type="text" class="form-control" name="splitNote" value="{{ split.note }}">
+          </div>
+        </div>
+        {% endfor %}
+
+        {% comment %} empty rows for entering new splits {% endcomment %}
+        {% for x in "xxxxx" %}
+        <div class="row mb-3">
+          <div class="col">
+            <select class="form-control" name="splitBudget">
+              <option></option>
+              {% for budget in budgets %}
+              <option value="{{ budget.id }}">{{ budget.icon }} {{ budget.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col">
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="text" inputmode="decimal" class="form-control" name="splitAmount">
+            </div>
+          </div>
+          <div class="col-6">
+            <input type="text" class="form-control" name="splitNote">
+          </div>
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <a class="btn btn-danger float-end" th:href="@{/transactions/{id}/delete(id=${transaction.id})}" role="button">Delete</a>
+      </form>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", function(event) {
+      document.querySelector("#editForm").addEventListener("submit", function(e) {
+        numberExtractor = e => (e.startsWith("-") ? -1 : 1) * (Math.abs(parseInt(e.split(".")[0], 10)) * 100 + parseInt(e.split(".")[1], 10));
+
+        amount = numberExtractor(document.querySelector("input[name=amount]").value);
+        splitsTotal = Array.from(document.querySelectorAll("input[name=splitAmount]"))
+            .map(e => e.value)
+            .filter(e => e.length > 0)
+            .map(numberExtractor)
+            .reduce((a, c) => a + c, 0);
+
+        if (amount != splitsTotal) {
+          alert(`Splits total up to ${splitsTotal} which does not match transaction amount ${amount}`);
+          e.preventDefault();
+        }
+      });
+    });
+  </script>
+{% endblock %}
