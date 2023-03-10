@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_GET
 
-from .models import Budget, TrackedTransaction, TrackedTransactionSplit
+from .models import BankAccount, Budget, TrackedTransaction, TrackedTransactionSplit
 from .service import calculate_budgets_available, parse_amount
 
 
@@ -86,3 +86,13 @@ def track(request: HttpRequest):
     )
 
     return HttpResponseRedirect('/transactions?budget=' + budget.name)
+
+
+@csrf_exempt  # TODO fix csrf
+@require_http_methods(['GET', 'POST'])
+def import_transactions(request: HttpRequest):
+    if request.method == 'GET':
+        context = {
+            'accounts': BankAccount.objects.all()
+        }
+        return render(request, 'budginator/importUpload.html', context)

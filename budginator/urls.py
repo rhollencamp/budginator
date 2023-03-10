@@ -6,5 +6,6 @@ urlpatterns = [
     path('', views.index),
     path('transactions', views.list_transactions),
     path('transactions/edit', views.edit_transaction),
+    path('transactions/import', views.import_transactions),
     path('transactions/track', views.track)
 ]
