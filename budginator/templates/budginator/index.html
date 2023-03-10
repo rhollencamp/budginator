@@ -6,9 +6,13 @@
       <h2 class="accordion-header" id="budgetHeading{{ forloop.counter }}">
         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#budgetBody{{ forloop.counter }}" aria-controls="budgetBody{{ forloop.counter }}" aria-expanded="false">
           <span class="w-100">{{ budget.icon }} {{ budget.name }}</span>
-          {% comment %} <span th:if="${budget.name != 'Void'}"
-                th:class="${'me-2 badge rounded-pill text-bg-' + ((available[budget.name] > 0) ? 'success' : 'danger')}"
-                th:text="${'$' + #numbers.formatDecimal(available[budget.name] / 100.0, 1, 2)}"></span> {% endcomment %}
+          {% if budget.name != 'Void' %}
+          {% with budget_available=available|dictitem:budget.name %}
+          <span class="me-2 badge rounded-pill text-bg-{% if budget_available > 0 %}success{% else %}danger{% endif %}">
+            {{ budget_available | amount }}
+          </span>
+          {% endwith %}
+          {% endif %}
         </button>
       </h2>
       <div id="budgetBody{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="budgetHeading{{ forloop.counter }}" data-bs-parent="#budgets">

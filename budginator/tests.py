@@ -35,12 +35,12 @@ class ServiceTests(TestCase):
 
         # track something and make sure it is reflected
         transaction = TrackedTransaction.objects.create(
-            amount=5000,
+            amount=-5000,
             date=date.today(),
             merchant='Test'
         )
         TrackedTransactionSplit.objects.create(
-            amount=5000,
+            amount=-5000,
             budget=budget,
             transaction=transaction
         )
