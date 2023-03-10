@@ -4,8 +4,8 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_GET
 
-from . import parse_amount
 from .models import Budget, TrackedTransaction, TrackedTransactionSplit
+from .service import parse_amount
 
 
 @require_GET
@@ -24,7 +24,7 @@ def list_transactions(request: HttpRequest):
     return render(request, 'budginator/transactions.html', context)
 
 
-@csrf_exempt # TODO fix csrf
+@csrf_exempt  # TODO fix csrf
 @require_http_methods(['GET', 'POST'])
 @atomic
 def edit_transaction(request: HttpRequest):
@@ -60,8 +60,7 @@ def edit_transaction(request: HttpRequest):
         return HttpResponseRedirect(f'/transactions/edit?transaction={transaction.id}')
 
 
-
-@csrf_exempt # TODO fix csrf
+@csrf_exempt  # TODO fix csrf
 @require_http_methods(['GET', 'POST'])
 @atomic
 def track(request: HttpRequest):
