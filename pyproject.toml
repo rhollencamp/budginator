@@ -5,4 +5,3 @@ max_line_length = 100
 max-line-length = 100
 disable = ["C0114", "C0115", "C0116"]
 load-plugins = ["pylint_django"]
-django-settings-module = confif

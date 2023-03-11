@@ -1,6 +1,12 @@
+from csv import DictReader
 from datetime import date
+from dateutil.parser import parse as parse_date
+from django.db.transaction import atomic
 
-from .models import Budget, TrackedTransactionSplit
+from .models import BankAccount
+from .models import Budget
+from .models import ImportedTransaction
+from .models import TrackedTransactionSplit
 
 
 def calculate_budgets_available() -> dict:
@@ -20,9 +26,14 @@ def calculate_budgets_available() -> dict:
 
 def parse_amount(amount: str) -> int:
     multiplier = 1
+    amount = amount.replace('$', '')
     if amount.startswith('-'):
         multiplier = -1
         amount = amount[1:]
+    if amount.startswith('(') and amount.endswith(')'):
+        multiplier = -1
+        amount = amount[1:]
+        amount = amount[:-1]
     parts = amount.split('.')
     if len(parts) == 1:
         parts = [amount, 0]
@@ -39,3 +50,20 @@ def calculate_num_months(start: date, end: date) -> int:
     result += end.month - start.month
     result += 1
     return result
+
+
+@atomic
+def import_transactions(account: BankAccount, data):
+    reader = DictReader(data)
+
+    for row in reader:
+        row_amount = parse_amount(row['Amount']) * account.multiplier
+        row_date = parse_date(row['Date']).date()
+        row_merchant = row['Description']
+
+        ImportedTransaction.objects.create(
+            amount=row_amount,
+            bank_account=account,
+            date=row_date,
+            merchant=row_merchant
+        )
