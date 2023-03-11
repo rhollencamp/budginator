@@ -110,13 +110,25 @@ def import_transactions(request: HttpRequest):
 @csrf_exempt  # TODO fix csrf
 @require_http_methods(['GET', 'POST'])
 def linkable_transactions(request: HttpRequest):
+    # viewing linkable page
     if request.method == 'GET':
         transactions = models.ImportedTransaction.objects.filter(transaction=None).order_by('-date')
         context = {
             'budgets': models.Budget.objects.all().order_by('name'),
+            'suggestions': service.suggest_links(),
             'transactions':  transactions
         }
         return render(request, 'budginator/listLinkable.html', context)
+
+    # performing a suggested link
+    if request.POST['imported'] and request.POST['tracked']:
+        imported = get_object_or_404(models.ImportedTransaction, pk=request.POST['imported'])
+        tracked = get_object_or_404(models.TrackedTransaction, pk=request.POST['tracked'])
+        imported.transaction = tracked
+        imported.save()
+        return HttpResponseRedirect('/transactions/linkable')
+
+    # tracking an imported transaction
     imported = get_object_or_404(models.ImportedTransaction, pk=request.POST['transaction'])
     budget = get_object_or_404(models.Budget, pk=request.POST['budget'])
 

@@ -41,5 +41,5 @@ class ImportedTransaction(models.Model):
     bank_account = models.ForeignKey(BankAccount, on_delete=models.CASCADE)
     date = models.DateField()
     merchant = models.CharField(max_length=255)
-    transaction = models.ForeignKey(
-        TrackedTransaction, null=True, on_delete=models.SET_NULL)
+    transaction = models.OneToOneField(
+        TrackedTransaction, null=True, on_delete=models.SET_NULL, related_name='imported')
