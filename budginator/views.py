@@ -1,3 +1,5 @@
+from io import StringIO
+
 from django.db.transaction import atomic
 from django.http import HttpResponseRedirect, HttpRequest
 from django.shortcuts import get_object_or_404, render
@@ -5,14 +7,14 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_GET
 
 from .models import BankAccount, Budget, TrackedTransaction, TrackedTransactionSplit
-from .service import calculate_budgets_available, parse_amount
+from . import service
 
 
 @require_GET
 def index(request: HttpRequest):
     context = {
         'budgets': Budget.objects.order_by('name'),
-        'available': calculate_budgets_available()
+        'available': service.calculate_budgets_available()
     }
     return render(request, 'budginator/index.html', context)
 
@@ -38,7 +40,7 @@ def edit_transaction(request: HttpRequest):
     else:
         transaction = get_object_or_404(TrackedTransaction, pk=request.POST['transaction'])
         # todo don't update stuff if linked to an import
-        transaction.amount = parse_amount(request.POST['amount'])
+        transaction.amount = service.parse_amount(request.POST['amount'])
         transaction.date = request.POST['date']
         transaction.merchant = request.POST['merchant']
         transaction.save()
@@ -52,7 +54,7 @@ def edit_transaction(request: HttpRequest):
                 if not split:
                     budget = get_object_or_404(Budget, pk=split_budget)
                     split = TrackedTransactionSplit(budget=budget, transaction=transaction)
-                split.amount = parse_amount(request.POST.getlist('splitAmount')[i])
+                split.amount = service.parse_amount(request.POST.getlist('splitAmount')[i])
                 split.note = request.POST.getlist('splitNote')[i]
                 split.save()
         # anything left in existing_splits can be deleted
@@ -73,13 +75,13 @@ def track(request: HttpRequest):
 
     budget = get_object_or_404(Budget, pk=request.POST['budget'])
     transaction = TrackedTransaction.objects.create(
-        amount=parse_amount(request.POST['amount']) * int(request.POST['multiplier']),
+        amount=service.parse_amount(request.POST['amount']) * int(request.POST['multiplier']),
         date=request.POST['date'],
         merchant=request.POST['merchant']
     )
 
     TrackedTransactionSplit.objects.create(
-        amount=parse_amount(request.POST['amount']) * int(request.POST['multiplier']),
+        amount=service.parse_amount(request.POST['amount']) * int(request.POST['multiplier']),
         budget=budget,
         note=request.POST['note'],
         transaction=transaction
@@ -96,3 +98,8 @@ def import_transactions(request: HttpRequest):
             'accounts': BankAccount.objects.all()
         }
         return render(request, 'budginator/importUpload.html', context)
+
+    account = get_object_or_404(BankAccount, pk=request.POST['account'])
+    data = request.FILES['file'].read().decode('utf-8')
+    result = service.import_transactions(account, StringIO(data))
+    return render(request, 'budginator/importSummary.html', result)

@@ -1,6 +1,6 @@
 from csv import DictReader
 from datetime import date
-from dateutil.parser import parse as parse_date
+from datetime import datetime
 from django.db.transaction import atomic
 
 from .models import BankAccount
@@ -54,12 +54,21 @@ def calculate_num_months(start: date, end: date) -> int:
 
 @atomic
 def import_transactions(account: BankAccount, data):
-    reader = DictReader(data)
+    already_imported = ImportedTransaction.objects.filter(bank_account=account)
 
+    reader = DictReader(data)
     for row in reader:
         row_amount = parse_amount(row['Amount']) * account.multiplier
-        row_date = parse_date(row['Date']).date()
+        row_date = datetime.strptime(row['Date'], '%m/%d/%Y').date()
         row_merchant = row['Description']
+
+        found = False
+        for imported_transaction in already_imported:
+            if imported_transaction.date == row_date and imported_transaction.amount == row_amount:
+                found = True
+                break
+        if found:
+            continue
 
         ImportedTransaction.objects.create(
             amount=row_amount,
@@ -67,3 +76,5 @@ def import_transactions(account: BankAccount, data):
             date=row_date,
             merchant=row_merchant
         )
+
+    return {}
