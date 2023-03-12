@@ -6,25 +6,45 @@
       <table class="table">
         <thead>
           <tr>
-            <td>Date</td>
-            <td>Merchant</td>
-            <td>Budget</td>
-            <td class="text-end">Amount</td>
-            <td>Note</td>
+            <th>Date</th>
+            <th>Merchant</th>
+            <th class="text-end">Amount</th>
+            <th>Budget</th>
+            <th>Note</th>
           </tr>
         </thead>
         <tbody>
-          {% for transaction in transactions %}
-          {% for split in transaction.splits.all %}
-          <tr data-transactionid="{{ transaction.id }}">
-            <td>{% if forloop.first %}{{ transaction.date | date:"M j" }}{% endif %}</td>
-            <td>{% if forloop.first %}{{ transaction.merchant }}{% endif %}</td>
-            <td>{{ split.budget.name }}</td>
+{% for transaction in transactions %}
+{% cycle '' 'bg-light' as rowcolor silent %}
+{% for split in transaction.splits.all %}
+{% if forloop.first and forloop.last %}
+          <tr data-transactionid="{{ transaction.id }}" class="{{ rowcolor }}">
+            <td>{{ transaction.date | date:"M j" }}</td>
+            <td>{{ transaction.merchant }}</td>
             <td class="text-end">{{ split.amount | amount }}</td>
+            <td>{{ split.budget.name }}</td>
             <td>{{ split.note }}</td>
           </tr>
-          {% endfor %}
-          {% endfor %}
+{% else %}
+{% if forloop.first %}
+          <tr data-transactionid="{{ transaction.id }}" class="{{ rowcolor }}">
+            <td>{{ transaction.date | date:"M j" }}</td>
+            <td>{{ transaction.merchant }}</td>
+            <td class="text-end">{{ transaction.amount | amount }}</td>
+            <td></td>
+            <td></td>
+          </tr>
+{% endif %}
+          <tr data-transactionid="{{ transaction.id }}" class="{{ rowcolor }}">
+            <td></td>
+            <td></td>
+            <td class="text-end">{{ split.amount | amount }}</td>
+            <td>{{ split.budget.name }}</td>
+            <td>{{ split.note }}</td>
+          </tr>
+{% endif %}
+{% endfor %}
+{% endfor %}
         </tbody>
       </table>
     </div>
