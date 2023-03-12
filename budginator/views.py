@@ -1,5 +1,6 @@
 from io import StringIO
 
+from django.contrib.admin.views.decorators import staff_member_required
 from django.db.transaction import atomic
 from django.http import HttpResponseRedirect, HttpRequest
 from django.shortcuts import get_object_or_404, render
@@ -11,6 +12,7 @@ from . import service
 
 
 @require_GET
+@staff_member_required
 def index(request: HttpRequest):
     context = {
         'budgets': models.Budget.objects.order_by('name'),
@@ -20,6 +22,7 @@ def index(request: HttpRequest):
 
 
 @require_GET
+@staff_member_required
 def list_transactions(request: HttpRequest):
     context = {
         'transactions': models.TrackedTransaction.objects.order_by('-date')
@@ -27,9 +30,10 @@ def list_transactions(request: HttpRequest):
     return render(request, 'budginator/transactions.html', context)
 
 
+@atomic
 @csrf_exempt  # TODO fix csrf
 @require_http_methods(['GET', 'POST'])
-@atomic
+@staff_member_required
 def edit_transaction(request: HttpRequest):
     if request.method == 'GET':
         context = {
@@ -64,9 +68,10 @@ def edit_transaction(request: HttpRequest):
         return HttpResponseRedirect(f'/transactions/edit?transaction={transaction.id}')
 
 
+@atomic
 @csrf_exempt  # TODO fix csrf
 @require_http_methods(['GET', 'POST'])
-@atomic
+@staff_member_required
 def track(request: HttpRequest):
     if request.method == 'GET':
         context = {
@@ -93,6 +98,7 @@ def track(request: HttpRequest):
 
 @csrf_exempt  # TODO fix csrf
 @require_http_methods(['GET', 'POST'])
+@staff_member_required
 def import_transactions(request: HttpRequest):
     if request.method == 'GET':
         context = {
@@ -109,6 +115,7 @@ def import_transactions(request: HttpRequest):
 @atomic
 @csrf_exempt  # TODO fix csrf
 @require_http_methods(['GET', 'POST'])
+@staff_member_required
 def linkable_transactions(request: HttpRequest):
     # viewing linkable page
     if request.method == 'GET':
