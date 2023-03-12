@@ -136,7 +136,7 @@ def linkable_transactions(request: HttpRequest):
         return render(request, 'budginator/listLinkable.html', context)
 
     # performing a suggested link
-    if request.POST['imported'] and request.POST['tracked']:
+    if request.POST.get('imported', False) and request.POST.get('tracked', False):
         imported = get_object_or_404(models.ImportedTransaction, pk=request.POST['imported'])
         tracked = get_object_or_404(models.TrackedTransaction, pk=request.POST['tracked'])
         imported.transaction = tracked
