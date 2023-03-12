@@ -103,7 +103,7 @@ def import_transactions(request: HttpRequest):
     account = get_object_or_404(models.BankAccount, pk=request.POST['account'])
     data = request.FILES['file'].read().decode('utf-8')
     result = service.import_transactions(account, StringIO(data))
-    return render(request, 'budginator/importSummary.html', result)
+    return render(request, 'budginator/importSummary.html', {'results': result})
 
 
 @atomic
