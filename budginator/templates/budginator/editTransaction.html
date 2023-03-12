@@ -73,16 +73,30 @@
           </div>
         </div>
         {% endfor %}
-
-        <button type="submit" class="btn btn-primary">Submit</button>
-        <a class="btn btn-danger float-end" href="/transactions/delete?transaction={{ transaction.id }}" role="button">Delete</a>
       </form>
+
+      <form action="/transactions/delete" method="post" id="deleteForm">
+        {% csrf_token %}
+        <input type="hidden" name="transaction" value="{{ transaction.id }}">
+      </form>
+
+      <button type="button" class="btn btn-primary float-end" id="submitButton">Submit</button>
+      <button type="button" class="btn btn-danger float-end me-3" id="deleteButton">Delete</button>
+
     </div>
   </div>
 
   <script type="text/javascript">
     document.addEventListener("DOMContentLoaded", function(event) {
-      document.querySelector("#editForm").addEventListener("submit", function(e) {
+      document.getElementById("submitButton").addEventListener("click", e => {
+        document.getElementById("editForm").submit();
+      });
+      document.getElementById("deleteButton").addEventListener("click", e => {
+        document.getElementById("deleteForm").submit();
+      });
+
+
+      document.getElementById("editForm").addEventListener("submit", e => {
         numberExtractor = e => (e.startsWith("-") ? -1 : 1) * (Math.abs(parseInt(e.split(".")[0], 10)) * 100 + parseInt(e.split(".")[1], 10));
 
         amount = numberExtractor(document.querySelector("input[name=amount]").value);
