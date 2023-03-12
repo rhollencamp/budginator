@@ -26,6 +26,8 @@ def index(request: HttpRequest):
 def list_transactions(request: HttpRequest):
     context = {
         'transactions': models.TrackedTransaction.objects.order_by('-date')
+                                                         .prefetch_related('splits'),
+        'budget_filter': int(request.GET.get('budget', 0))
     }
     return render(request, 'budginator/transactions.html', context)
 
