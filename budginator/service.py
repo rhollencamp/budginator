@@ -92,7 +92,26 @@ def import_transactions(account: models.BankAccount, data):
 
 
 def _parse_csv_row(row: dict, multiplier: int) -> dict:
-    row_amount = parse_amount(row['Amount']) * multiplier
+    # 'Amount'
+    row_amount = row.get('Amount', None)
+    if row_amount:
+        row_amount = parse_amount(row_amount) * multiplier
+
+    # 'Withdrawals'
+    if not row_amount:
+        row_amount = row.get('Withdrawals', None)
+        if row_amount:
+            row_amount = parse_amount(row_amount) * -1 * multiplier
+
+    # 'Deposits'
+    if not row_amount:
+        row_amount = row.get('Deposits', None)
+        if row_amount:
+            row_amount = parse_amount(row_amount) * multiplier
+
+    if not row_amount:
+        raise ValueError('Could not parse an amount')
+
     row_date = datetime.strptime(row['Date'], '%m/%d/%Y').date()
     row_merchant = row['Description']
 
