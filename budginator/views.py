@@ -103,7 +103,7 @@ def track(request: HttpRequest):
         transaction=transaction
     )
 
-    return HttpResponseRedirect('/transactions?budget=' + budget.name)
+    return HttpResponseRedirect(f'/transactions?budget={budget.id}')
 
 
 @csrf_exempt  # TODO fix csrf
