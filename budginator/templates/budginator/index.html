@@ -1,18 +1,18 @@
 {% extends "budginator/layout.html" %}
 {% block content %}
   <div class="accordion" id="budgets">
-    {% for budget in budgets %}
+{% for budget in budgets %}
     <div class="accordion-item">
       <h2 class="accordion-header" id="budgetHeading{{ forloop.counter }}">
         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#budgetBody{{ forloop.counter }}" aria-controls="budgetBody{{ forloop.counter }}" aria-expanded="false">
           <span class="w-100">{{ budget.icon }} {{ budget.name }}</span>
-          {% if budget.amount != 0 %}
-          {% with budget_available=available|dictitem:budget.name %}
+{% if budget.amount != 0 %}
+{% with budget_available=available|dictitem:budget.name %}
           <span class="me-2 badge rounded-pill text-bg-{% if budget_available > 0 %}success{% else %}danger{% endif %}">
             {{ budget_available | amount }}
           </span>
-          {% endwith %}
-          {% endif %}
+{% endwith %}
+{% endif %}
         </button>
       </h2>
       <div id="budgetBody{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="budgetHeading{{ forloop.counter }}" data-bs-parent="#budgets">
@@ -20,23 +20,31 @@
           <a href="/transactions?budget={{ budget.id }}" class="btn btn-primary" role="button">View Transactions</a>
           <a href="/transactions/track?budget={{ budget.id }}" class="btn btn-primary" role="button">Track</a>
 
-          {% comment %} <table class="table mt-2">
-            <thead th:if="${budget.name != 'Void'}">
+          <table class="table mt-2">
+{% if budget.amount != 0 %}
+            <thead>
               <tr>
                 <th>Monthly Budget</th>
-                <th th:text="${'$' + #numbers.formatDecimal(budget.budget / 100.0, 1, 2)}"></th>
+                <th>{{ budget.amount | amount }}</th>
               </tr>
             </thead>
+{% endif %}
             <tbody class="table-group-divider">
-              <tr th:each="yms: ${monthlyStats[budget.name]}">
-                <td th:text="${yms.key}"></td>
-                <td th:text="${'$' + #numbers.formatDecimal(yms.value / 100.0, 1, 2)}"></td>
+{% with budget_stats=monthly|dictitem:budget.id %}
+{% for year, month_stats in budget_stats.items %}
+{% for month, amount in month_stats.items %}
+              <tr>
+                <td>{{ month }}/{{ year }}</td>
+                <td>{{ amount | amount }}</td>
               </tr>
+{% endfor %}
+{% endfor %}
+{% endwith %}
             </tbody>
-          </table> {% endcomment %}
+          </table>
         </div>
       </div>
     </div>
-    {% endfor %}
+{% endfor %}
   </div>
 {% endblock %}

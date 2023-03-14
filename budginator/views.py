@@ -16,7 +16,8 @@ from . import service
 def index(request: HttpRequest):
     context = {
         'budgets': models.Budget.objects.order_by('name'),
-        'available': service.calculate_budgets_available()
+        'available': service.calculate_budgets_available(),
+        'monthly': service.calculate_budgets_monthly()
     }
     return render(request, 'budginator/index.html', context)
 
