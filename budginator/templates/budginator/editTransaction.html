@@ -4,6 +4,7 @@
     <div class="card-header">Edit Transaction</div>
     <div class="card-body">
       <form action="/transactions/edit" id="editForm" method="post">
+        {% csrf_token %}
         <input type="hidden" name="transaction" value="{{ transaction.id }}">
         <div class="mb-3">
           <label for="date" class="form-label">Date</label>
