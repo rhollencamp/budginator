@@ -2,13 +2,21 @@ from io import StringIO
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.transaction import atomic
-from django.http import HttpResponseRedirect, HttpRequest
+from django.http import FileResponse, HttpResponseRedirect, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods, require_GET, require_POST
 
+from config.settings import BASE_DIR
 from . import models
 from . import service
+
+
+@require_GET
+def favicon_file(request: HttpRequest) -> HttpResponse:
+    name = request.path.lstrip("/")
+    file = (BASE_DIR / 'budginator' / 'static' / name).open('rb')
+    return FileResponse(file)
 
 
 @require_GET
