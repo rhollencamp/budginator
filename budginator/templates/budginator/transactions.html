@@ -2,59 +2,46 @@
 {% block content %}
   <div class="card">
     <div class="card-header">Transactions</div>
-    <div class="card-body table-responsive">
-      <table class="table table-borderless">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Merchant</th>
-            <th class="text-end">Amount</th>
-            <th>Budget</th>
-            <th>Note</th>
-          </tr>
-        </thead>
-        <tbody>
+    <div class="card-body">
 {% for transaction in transactions %}
 {% cycle '' 'bg-light' as rowcolor silent %}
 {% for split in transaction.splits.all %}
 {% if not budget_filter or budget_filter == split.budget.id %}
 {% if forloop.first and forloop.last %}
-          <tr data-transactionid="{{ transaction.id }}" class="{{ rowcolor }}">
-            <td>{{ transaction.date | date:"M j" }}</td>
-            <td>{{ transaction.merchant }}</td>
-            <td class="text-end">{{ split.amount | amount }}</td>
-            <td>{{ split.budget.name }}</td>
-            <td>{{ split.note }}</td>
-          </tr>
+      <div data-transactionid="{{ transaction.id }}" class="row gx-2 py-2 align-items-center {{ rowcolor }}">
+        <div class="col-12 col-xl-1">{{ transaction.date | date:"M j" }}</div>
+        <div class="col-12 col-xl-6">{{ transaction.merchant }}</div>
+        <div class="col-6  col-xl-1 text-end">{{ split.amount | amount }}</div>
+        <div class="col-6  col-xl-2">{{ split.budget.name }}</div>
+        <div class="col-12 col-xl-2">{{ split.note }}</div>
+      </div>
 {% else %}
 {% if forloop.first %}
-          <tr data-transactionid="{{ transaction.id }}" class="{{ rowcolor }}">
-            <td>{{ transaction.date | date:"M j" }}</td>
-            <td>{{ transaction.merchant }}</td>
-            <td class="text-end">{{ transaction.amount | amount }}</td>
-            <td></td>
-            <td></td>
-          </tr>
+      <div data-transactionid="{{ transaction.id }}" class="row gx-2 py-2 align-items-center {{ rowcolor }}">
+        <div class="col-12 col-xl-1">{{ transaction.date | date:"M j" }}</div>
+        <div class="col-12 col-xl-6">{{ transaction.merchant }}</div>
+        <div class="col-6  col-xl-1 text-end">{{ transaction.amount | amount }}</div>
+        <div class="col-6  col-xl-2"></div>
+        <div class="col-12 col-xl-2"></div>
+      </div>
 {% endif %}
-          <tr data-transactionid="{{ transaction.id }}" class="{{ rowcolor }}">
-            <td></td>
-            <td></td>
-            <td class="text-end">{{ split.amount | amount }}</td>
-            <td>{{ split.budget.name }}</td>
-            <td>{{ split.note }}</td>
-          </tr>
+      <div data-transactionid="{{ transaction.id }}" class="row gx-2 py-2 align-items-center {{ rowcolor }}">
+        <div class="col-12 col-xl-1"></div>
+        <div class="col-12 col-xl-6"></div>
+        <div class="col-6  col-xl-1 text-end">{{ split.amount | amount }}</div>
+        <div class="col-6  col-xl-2">{{ split.budget.name }}</div>
+        <div class="col-12 col-xl-2">{{ split.note }}</div>
+      </div>
 {% endif %}
 {% endif %}
 {% endfor %}
 {% endfor %}
-        </tbody>
-      </table>
     </div>
   </div>
 
   <script type="text/javascript">
     document.addEventListener("DOMContentLoaded", function(event) {
-      document.querySelectorAll(".table > tbody > tr").forEach(function(row) {
+      document.querySelectorAll(".row").forEach(function(row) {
         row.addEventListener("click", function(event) {
           document.location = `/transactions/edit?transaction=${row.dataset.transactionid}`;
         });
