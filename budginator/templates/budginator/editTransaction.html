@@ -90,14 +90,6 @@
   <script type="text/javascript">
     document.addEventListener("DOMContentLoaded", function(event) {
       document.getElementById("submitButton").addEventListener("click", e => {
-        document.getElementById("editForm").submit();
-      });
-      document.getElementById("deleteButton").addEventListener("click", e => {
-        document.getElementById("deleteForm").submit();
-      });
-
-
-      document.getElementById("editForm").addEventListener("submit", e => {
         numberExtractor = e => (e.startsWith("-") ? -1 : 1) * (Math.abs(parseInt(e.split(".")[0], 10)) * 100 + parseInt(e.split(".")[1], 10));
 
         amount = numberExtractor(document.querySelector("input[name=amount]").value);
@@ -109,8 +101,12 @@
 
         if (amount != splitsTotal) {
           alert(`Splits total up to ${splitsTotal} which does not match transaction amount ${amount}`);
-          e.preventDefault();
+        } else {
+          document.getElementById("editForm").submit();
         }
+      });
+      document.getElementById("deleteButton").addEventListener("click", e => {
+        document.getElementById("deleteForm").submit();
       });
     });
   </script>
