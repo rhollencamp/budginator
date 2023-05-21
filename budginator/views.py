@@ -111,6 +111,9 @@ def track(request: HttpRequest):
         context = {
             'budgets': models.Budget.objects.order_by('name')
         }
+        if 'budget' in request.GET:
+            budget = get_object_or_404(models.Budget, pk=request.GET['budget'])
+            context['selected_budget'] = budget
         return render(request, 'budginator/track.html', context)
 
     budget = get_object_or_404(models.Budget, pk=request.POST['budget'])
