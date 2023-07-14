@@ -78,3 +78,20 @@ class ServiceTests(TestCase):
         self.assertEqual(date(2023, 2, 12), transactions[1].date)
         self.assertEqual(1000, transactions[1].amount)
         self.assertEqual('Deposit Merchant', transactions[1].merchant)
+
+    def test_import_dedupe(self):
+        account = BankAccount.objects.create(
+            name='Test',
+            multiplier=1
+        )
+
+        test_input = [
+            'Date,Description,Amount,Balance',
+            '02/09/2023,"Withdrawl Merchant",($25.00),$9999.99',
+            '02/12/2023,"Deposit Merchant",$10.00,$9999.99'
+        ]
+        import_transactions(account, test_input)
+        import_transactions(account, test_input)
+
+        transactions = ImportedTransaction.objects.all()
+        self.assertEqual(2, len(transactions))
