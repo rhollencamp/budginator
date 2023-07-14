@@ -24,6 +24,7 @@ def calculate_budgets_available() -> dict:
 def parse_amount(amount: str) -> int:
     multiplier = 1
     amount = amount.replace('$', '')
+    amount = amount.replace(',', '')
     if amount.startswith('-'):
         multiplier = -1
         amount = amount[1:]
