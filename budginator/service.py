@@ -3,18 +3,15 @@ from datetime import date
 from datetime import datetime
 from django.db.transaction import atomic
 
-from .models import BankAccount
-from .models import Budget
-from .models import ImportedTransaction
-from .models import TrackedTransactionSplit
+from . import models
 
 
 def calculate_budgets_available() -> dict:
     result = {}
 
-    splits = TrackedTransactionSplit.objects.all()
+    splits = models.TrackedTransactionSplit.objects.all()
 
-    for budget in Budget.objects.all():
+    for budget in models.Budget.objects.all():
         num_months = calculate_num_months(budget.start_date, date.today())
         amount = budget.amount * num_months
 
@@ -53,8 +50,8 @@ def calculate_num_months(start: date, end: date) -> int:
 
 
 @atomic
-def import_transactions(account: BankAccount, data):
-    already_imported = ImportedTransaction.objects.filter(bank_account=account)
+def import_transactions(account: models.BankAccount, data):
+    already_imported = models.ImportedTransaction.objects.filter(bank_account=account)
 
     reader = DictReader(data)
     for row in reader:
@@ -70,7 +67,7 @@ def import_transactions(account: BankAccount, data):
         if found:
             continue
 
-        ImportedTransaction.objects.create(
+        models.ImportedTransaction.objects.create(
             amount=row_amount,
             bank_account=account,
             date=row_date,
@@ -78,3 +75,16 @@ def import_transactions(account: BankAccount, data):
         )
 
     return {}
+
+
+def suggest_links():
+    imported = models.ImportedTransaction.objects.filter(transaction=None)
+    tracked = models.TrackedTransaction.objects.filter(imported=None)
+
+    result = []
+    for i in imported:
+        for t in tracked:
+            if i.amount == t.amount:
+                result.append((i, t))
+
+    return result
