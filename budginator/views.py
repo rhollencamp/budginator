@@ -6,14 +6,14 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_GET
 
-from .models import BankAccount, Budget, TrackedTransaction, TrackedTransactionSplit
+from . import models
 from . import service
 
 
 @require_GET
 def index(request: HttpRequest):
     context = {
-        'budgets': Budget.objects.order_by('name'),
+        'budgets': models.Budget.objects.order_by('name'),
         'available': service.calculate_budgets_available()
     }
     return render(request, 'budginator/index.html', context)
@@ -22,7 +22,7 @@ def index(request: HttpRequest):
 @require_GET
 def list_transactions(request: HttpRequest):
     context = {
-        'transactions': TrackedTransaction.objects.order_by('-date')
+        'transactions': models.TrackedTransaction.objects.order_by('-date')
     }
     return render(request, 'budginator/transactions.html', context)
 
@@ -33,12 +33,13 @@ def list_transactions(request: HttpRequest):
 def edit_transaction(request: HttpRequest):
     if request.method == 'GET':
         context = {
-            'transaction': get_object_or_404(TrackedTransaction, pk=request.GET['transaction']),
-            'budgets': Budget.objects.order_by('name')
+            'transaction': get_object_or_404(models.TrackedTransaction,
+                                             pk=request.GET['transaction']),
+            'budgets': models.Budget.objects.order_by('name')
         }
         return render(request, 'budginator/editTransaction.html', context)
     else:
-        transaction = get_object_or_404(TrackedTransaction, pk=request.POST['transaction'])
+        transaction = get_object_or_404(models.TrackedTransaction, pk=request.POST['transaction'])
         # todo don't update stuff if linked to an import
         transaction.amount = service.parse_amount(request.POST['amount'])
         transaction.date = request.POST['date']
@@ -52,8 +53,8 @@ def edit_transaction(request: HttpRequest):
             if split_budget:
                 split = existing_splits.pop(int(split_budget), None)
                 if not split:
-                    budget = get_object_or_404(Budget, pk=split_budget)
-                    split = TrackedTransactionSplit(budget=budget, transaction=transaction)
+                    budget = get_object_or_404(models.Budget, pk=split_budget)
+                    split = models.TrackedTransactionSplit(budget=budget, transaction=transaction)
                 split.amount = service.parse_amount(request.POST.getlist('splitAmount')[i])
                 split.note = request.POST.getlist('splitNote')[i]
                 split.save()
@@ -69,18 +70,18 @@ def edit_transaction(request: HttpRequest):
 def track(request: HttpRequest):
     if request.method == 'GET':
         context = {
-            'budgets': Budget.objects.order_by('name')
+            'budgets': models.Budget.objects.order_by('name')
         }
         return render(request, 'budginator/track.html', context)
 
-    budget = get_object_or_404(Budget, pk=request.POST['budget'])
-    transaction = TrackedTransaction.objects.create(
+    budget = get_object_or_404(models.Budget, pk=request.POST['budget'])
+    transaction = models.TrackedTransaction.objects.create(
         amount=service.parse_amount(request.POST['amount']) * int(request.POST['multiplier']),
         date=request.POST['date'],
         merchant=request.POST['merchant']
     )
 
-    TrackedTransactionSplit.objects.create(
+    models.TrackedTransactionSplit.objects.create(
         amount=service.parse_amount(request.POST['amount']) * int(request.POST['multiplier']),
         budget=budget,
         note=request.POST['note'],
@@ -95,11 +96,19 @@ def track(request: HttpRequest):
 def import_transactions(request: HttpRequest):
     if request.method == 'GET':
         context = {
-            'accounts': BankAccount.objects.all()
+            'accounts': models.BankAccount.objects.all()
         }
         return render(request, 'budginator/importUpload.html', context)
 
-    account = get_object_or_404(BankAccount, pk=request.POST['account'])
+    account = get_object_or_404(models.BankAccount, pk=request.POST['account'])
     data = request.FILES['file'].read().decode('utf-8')
     result = service.import_transactions(account, StringIO(data))
     return render(request, 'budginator/importSummary.html', result)
+
+
+@require_GET
+def linkable_transactions(request: HttpRequest):
+    context = {
+        'transactions': models.ImportedTransaction.objects.filter(transaction=None)
+    }
+    return render(request, 'budginator/listLinkable.html', context)

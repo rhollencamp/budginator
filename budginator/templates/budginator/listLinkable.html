@@ -1,0 +1,36 @@
+{% extends "budginator/layout.html" %}
+{% block content %}
+  <div class="card">
+    <div class="card-header">Linkable Transactions</div>
+    <div class="card-body table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <td>Date</td>
+            <td>Merchant</td>
+            <td class="text-end">Amount</td>
+          </tr>
+        </thead>
+        <tbody>
+          {% for transaction in transactions %}
+          <tr data-transactionid="{{ transaction.id }}">
+            <td>{{ transaction.date | date:"M j Y" }}</td>
+            <td>{{ transaction.merchant }}</td>
+            <td class="text-end">{{ transaction.amount | amount }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", function(event) {
+      document.querySelectorAll(".table > tbody > tr").forEach(function(row) {
+        row.addEventListener("click", function(event) {
+          document.location = `/transactions/edit?transaction=${row.dataset.transactionid}`;
+        });
+      });
+    });
+  </script>
+{% endblock %}
