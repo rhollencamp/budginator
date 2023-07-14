@@ -25,11 +25,25 @@ def index(request: HttpRequest):
 @require_GET
 @staff_member_required
 def list_transactions(request: HttpRequest):
+    transactions = models.TrackedTransaction.objects.order_by('-date').prefetch_related('splits')
     context = {
-        'transactions': models.TrackedTransaction.objects.order_by('-date')
-                                                         .prefetch_related('splits'),
-        'budget_filter': int(request.GET.get('budget', 0))
+        'transactions': transactions
     }
+
+    if 'budget' in request.GET:
+        budget_id = int(request.GET['budget'])
+        filtered_transactions = []
+        for transaction in transactions:
+            for split in transaction.splits.all():
+                if split.budget_id == budget_id:
+                    filtered_transactions.append(transaction)
+                    break
+        context = {
+            'transactions': filtered_transactions,
+            'budget_filter': budget_id
+        }
+
+
     return render(request, 'budginator/transactions.html', context)
 
 
