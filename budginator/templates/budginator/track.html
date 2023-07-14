@@ -3,7 +3,6 @@
 <div class="card">
   <div class="card-header">Track</div>
   <div class="card-body">
-    {% csrf_token %}
     <form action="/transactions/track" method="post">
       {% csrf_token %}
       <div class="mb-3">
@@ -17,9 +16,9 @@
       <div class="mb-3">
         <label for="budget" class="form-label">Budget</label>
         <select class="form-control" name="budget" id="budget">
-          {% for budget in budgets %}
-          <option value="{{ budget.id }}">{{ budget.icon }} {{ budget.name }}</option>
-          {% endfor %}
+{% for budget in budgets %}
+          <option value="{{ budget.id }}" {% if selected_budget and budget.id == selected_budget.id %}selected="selected"{% endif %}>{{ budget.icon }} {{ budget.name }}</option>
+{% endfor %}
         </select>
       </div>
       <div class="mb-3">
