@@ -6,6 +6,7 @@
     <div class="card-body">
       {% for suggestion in suggestions %}
       <form action="/transactions/linkable" method="post">
+        {% csrf_token %}
         <input type="hidden" name="imported" value="{{ suggestion.0.id }}">
         <input type="hidden" name="tracked" value="{{ suggestion.1.id }}">
         <div class="row">
@@ -68,6 +69,7 @@
 
   <div class="modal" id="linkModal" tabindex="-1" aria-labelledby="linkModalLabel" aria-hidden="true">
     <form action="/transactions/linkable" method="post">
+      {% csrf_token %}
       <div class="modal-dialog modal-xl">
         <div class="modal-content">
           <div class="modal-header">

@@ -5,6 +5,7 @@
   <div class="card-body">
     {% csrf_token %}
     <form action="/transactions/track" method="post">
+      {% csrf_token %}
       <div class="mb-3">
         <label for="date" class="form-label">Date</label>
         <input type="date" class="form-control" id="date" name="date">
