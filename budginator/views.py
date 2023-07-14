@@ -5,7 +5,7 @@ from django.db.transaction import atomic
 from django.http import HttpResponseRedirect, HttpRequest
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods, require_GET
+from django.views.decorators.http import require_http_methods, require_GET, require_POST
 
 from . import models
 from . import service
@@ -28,6 +28,14 @@ def list_transactions(request: HttpRequest):
         'transactions': models.TrackedTransaction.objects.order_by('-date')
     }
     return render(request, 'budginator/transactions.html', context)
+
+
+@staff_member_required
+@require_POST
+def delete_transaction(request: HttpRequest):
+    transaction = get_object_or_404(models.TrackedTransaction, pk=request.POST['transaction'])
+    transaction.delete()
+    return HttpResponseRedirect('/')
 
 
 @atomic

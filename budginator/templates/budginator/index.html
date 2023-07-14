@@ -6,7 +6,7 @@
       <h2 class="accordion-header" id="budgetHeading{{ forloop.counter }}">
         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#budgetBody{{ forloop.counter }}" aria-controls="budgetBody{{ forloop.counter }}" aria-expanded="false">
           <span class="w-100">{{ budget.icon }} {{ budget.name }}</span>
-          {% if budget.name != 'Void' %}
+          {% if budget.amount == 0 %}
           {% with budget_available=available|dictitem:budget.name %}
           <span class="me-2 badge rounded-pill text-bg-{% if budget_available > 0 %}success{% else %}danger{% endif %}">
             {{ budget_available | amount }}
