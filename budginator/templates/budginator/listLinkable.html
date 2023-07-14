@@ -34,36 +34,25 @@
 
   <div class="card">
     <div class="card-header">Linkable Transactions</div>
-    <div class="card-body table-responsive">
-      <table class="table">
-        <thead>
-          <tr>
-            <td>Date</td>
-            <td>Merchant</td>
-            <td class="text-end">Amount</td>
-            <td></td>
-          </tr>
-        </thead>
-        <tbody>
-          {% for transaction in transactions %}
-          <tr data-transactionid="{{ transaction.id }}">
-            <td>{{ transaction.date | date:"M j Y" }}</td>
-            <td>{{ transaction.merchant }}</td>
-            <td class="text-end">{{ transaction.amount | amount }}</td>
-            <td>
-              <button type="button" class="btn btn-light" data-bs-toggle="modal"
+    <div class="card-body">
+{% for transaction in transactions %}
+{% cycle '' 'bg-light' as rowcolor silent %}
+      <div class="row py-2 align-items-center {{ rowcolor }}">
+        <div class="col-12 col-xl-2">{{ transaction.date | date:"M j Y" }}</div>
+        <div class="col-12 col-xl-7">{{ transaction.merchant }}</div>
+        <div class="col-12 col-xl-2 text-end">{{ transaction.amount | amount }}</div>
+        <div class="col-12 col-xl-1">
+          <button type="button" class="btn btn-secondary" data-bs-toggle="modal"
                                                           data-bs-target="#linkModal"
                                                           data-linkable-transaction="{{ transaction.id }}"
                                                           data-linkable-date="{{ transaction.date | date:"M j Y" }}"
                                                           data-linkable-merchant="{{ transaction.merchant }}"
                                                           data-linkable-amount="{{ transaction.amount | amount }}">
-                🔗
-              </button>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+            🔗
+          </button>
+        </div>
+      </div>
+{% endfor %}
     </div>
   </div>
 
