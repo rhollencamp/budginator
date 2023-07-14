@@ -1,0 +1,42 @@
+{% extends "budginator/layout.html" %}
+{% block content %}
+  <div class="card">
+    <div class="card-header">Transactions</div>
+    <div class="card-body table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <td>Date</td>
+            <td>Merchant</td>
+            <td>Budget</td>
+            <td class="text-end">Amount</td>
+            <td>Note</td>
+          </tr>
+        </thead>
+        <tbody>
+          {% for transaction in transactions %}
+          {% for split in transaction.splits.all %}
+          <tr>
+            <td>{% if forloop.first %}{{ transaction.date | date:"M j" }}{% endif %}</td>
+            <td>{% if forloop.first %}{{ transaction.merchant }}{% endif %}</td>
+            <td>{{ split.budget.name }}</td>
+            <td class="text-end">{{ split.amount | floatformat:2 }}</td>
+            <td>{{ split.note }}</td>
+          </tr>
+          {% endfor %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", function(event) {
+      document.querySelectorAll(".table > tbody > tr").forEach(function(row) {
+        row.addEventListener("click", function(event) {
+          document.location = `/transactions/${row.dataset.transactionid}`;
+        });
+      });
+    });
+  </script>
+{% endblock %}
