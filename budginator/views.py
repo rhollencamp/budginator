@@ -1,4 +1,4 @@
-from django.db import transaction
+from django.db.transaction import atomic
 from django.http import HttpResponseRedirect, HttpRequest
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_exempt
@@ -26,7 +26,7 @@ def list_transactions(request: HttpRequest):
 
 @csrf_exempt # TODO fix csrf
 @require_http_methods(['GET', 'POST'])
-@transaction.atomic
+@atomic
 def edit_transaction(request: HttpRequest):
     if request.method == 'GET':
         context = {
@@ -45,11 +45,11 @@ def edit_transaction(request: HttpRequest):
         # splits
         existing_splits = {x.id: x for x in transaction.splits.all()}
 
-        for i, splitBudget in enumerate(request.POST.getlist('splitBudget')):
-            if splitBudget:
-                split = existing_splits.pop(int(splitBudget), None)
+        for i, split_budget in enumerate(request.POST.getlist('splitBudget')):
+            if split_budget:
+                split = existing_splits.pop(int(split_budget), None)
                 if not split:
-                    budget = get_object_or_404(Budget, pk=splitBudget)
+                    budget = get_object_or_404(Budget, pk=split_budget)
                     split = TrackedTransactionSplit(budget=budget, transaction=transaction)
                 split.amount = parse_amount(request.POST.getlist('splitAmount')[i])
                 split.note = request.POST.getlist('splitNote')[i]
@@ -63,26 +63,26 @@ def edit_transaction(request: HttpRequest):
 
 @csrf_exempt # TODO fix csrf
 @require_http_methods(['GET', 'POST'])
-@transaction.atomic
+@atomic
 def track(request: HttpRequest):
     if request.method == 'GET':
         context = {
             'budgets': Budget.objects.order_by('name')
         }
         return render(request, 'budginator/track.html', context)
-    else:
-        budget = get_object_or_404(Budget, pk=request.POST['budget'])
-        transaction = TrackedTransaction.objects.create(
-            amount=parse_amount(request.POST['amount']) * int(request.POST['multiplier']),
-            date=request.POST['date'],
-            merchant=request.POST['merchant']
-        )
 
-        TrackedTransactionSplit.objects.create(
-            amount=parse_amount(request.POST['amount']) * int(request.POST['multiplier']),
-            budget=budget,
-            note=request.POST['note'],
-            transaction=transaction
-        )
+    budget = get_object_or_404(Budget, pk=request.POST['budget'])
+    transaction = TrackedTransaction.objects.create(
+        amount=parse_amount(request.POST['amount']) * int(request.POST['multiplier']),
+        date=request.POST['date'],
+        merchant=request.POST['merchant']
+    )
 
-        return HttpResponseRedirect('/transactions?budget=' + budget.name)
+    TrackedTransactionSplit.objects.create(
+        amount=parse_amount(request.POST['amount']) * int(request.POST['multiplier']),
+        budget=budget,
+        note=request.POST['note'],
+        transaction=transaction
+    )
+
+    return HttpResponseRedirect('/transactions?budget=' + budget.name)

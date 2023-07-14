@@ -20,4 +20,6 @@ class TrackedTransactionSplit(models.Model):
     amount = models.IntegerField()
     budget = models.ForeignKey(Budget, on_delete=models.CASCADE)
     note = models.CharField(max_length=255)
-    transaction = models.ForeignKey(TrackedTransaction, on_delete=models.CASCADE, related_name='splits')
+    transaction = models.ForeignKey(TrackedTransaction,
+                                    on_delete=models.CASCADE,
+                                    related_name='splits')

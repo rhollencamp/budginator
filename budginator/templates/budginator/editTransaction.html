@@ -75,7 +75,7 @@
         {% endfor %}
 
         <button type="submit" class="btn btn-primary">Submit</button>
-        <a class="btn btn-danger float-end" th:href="@{/transactions/{id}/delete(id=${transaction.id})}" role="button">Delete</a>
+        <a class="btn btn-danger float-end" href="/transactions/delete?transaction={{ transaction.id }}" role="button">Delete</a>
       </form>
     </div>
   </div>
