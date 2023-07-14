@@ -1,13 +1,20 @@
 from datetime import date
 
-from .models import Budget
+from .models import Budget, TrackedTransactionSplit
 
 
 def calculate_budgets_available() -> dict:
     result = {}
+
+    splits = TrackedTransactionSplit.objects.all()
+
     for budget in Budget.objects.all():
         num_months = calculate_num_months(budget.start_date, date.today())
-        result[budget.name] = budget.amount * num_months
+        amount = budget.amount * num_months
+
+        for split in (x for x in splits if x.budget == budget):
+            amount -= split.amount
+        result[budget.name] = amount
     return result
 
 
