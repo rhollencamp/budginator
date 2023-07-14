@@ -1,4 +1,28 @@
 {% extends "budginator/layout.html" %}
 {% block content %}
-  <h1>TODO</h1>
+  <div class="card">
+    <div class="card-header">Import Results</div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-5 text-end">Records Created</div>
+        <div class="col-2">{{ results.imported }}</div>
+      </div>
+      <div class="row">
+        <div class="col-5 text-end">Records Already Imported</div>
+        <div class="col-2">{{ results.matched }}</div>
+      </div>
+      <div class="row">
+        <div class="col-5 text-end">Errors</div>
+        <div class="col-2">{{ results.error | length }}</div>
+      </div>
+
+      {% for row in results.error %}
+      <div class="row">
+        <div class="col-2">{{ row.date }}</div>
+        <div class="col-8">{{ row.merchant }}</div>
+        <div class="col-2">{{ row.amount | amount }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
 {% endblock %}

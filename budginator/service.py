@@ -53,28 +53,54 @@ def calculate_num_months(start: date, end: date) -> int:
 def import_transactions(account: models.BankAccount, data):
     already_imported = models.ImportedTransaction.objects.filter(bank_account=account)
 
-    reader = DictReader(data)
-    for row in reader:
-        row_amount = parse_amount(row['Amount']) * account.multiplier
-        row_date = datetime.strptime(row['Date'], '%m/%d/%Y').date()
-        row_merchant = row['Description']
+    result = {
+        'imported': 0,
+        'matched': 0,
+        'error': []
+    }
 
-        found = False
-        for imported_transaction in already_imported:
-            if imported_transaction.date == row_date and imported_transaction.amount == row_amount:
-                found = True
-                break
-        if found:
-            continue
+    # rows = [ DictReader(data))
+    rows = [_parse_csv_row(x, account.multiplier) for x in DictReader(data)]
 
-        models.ImportedTransaction.objects.create(
-            amount=row_amount,
-            bank_account=account,
-            date=row_date,
-            merchant=row_merchant
-        )
+    while len(rows) > 0:
+        row = rows.pop()
 
-    return {}
+        # find number of records in db that look similar
+        num_existing = sum(1 for it in already_imported
+                           if it.date == row['date'] and it.amount == row['amount'])
+        if num_existing == 0:
+            models.ImportedTransaction.objects.create(
+                amount=row['amount'],
+                bank_account=account,
+                date=row['date'],
+                merchant=row['merchant']
+            )
+            result['imported'] += 1
+        else:
+            matching_rows = [x for x in rows
+                             if x['date'] == row['date'] and x['amount'] == row['amount']]
+            for x in matching_rows:
+                rows.remove(x)
+            matching_rows.append(row)
+
+            if len(matching_rows) == num_existing:
+                result['matched'] += num_existing
+            else:
+                result['error'].extend(matching_rows)
+
+    return result
+
+
+def _parse_csv_row(row: dict, multiplier: int) -> dict:
+    row_amount = parse_amount(row['Amount']) * multiplier
+    row_date = datetime.strptime(row['Date'], '%m/%d/%Y').date()
+    row_merchant = row['Description']
+
+    return {
+        'amount': row_amount,
+        'date': row_date,
+        'merchant': row_merchant
+    }
 
 
 def suggest_links():

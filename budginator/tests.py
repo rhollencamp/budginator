@@ -88,10 +88,32 @@ class ServiceTests(TestCase):
             '02/12/2023,"Deposit Merchant",$10.00,$9999.99'
         ]
         service.import_transactions(account, test_input)
-        service.import_transactions(account, test_input)
+        result = service.import_transactions(account, test_input)
 
         transactions = ImportedTransaction.objects.all()
         self.assertEqual(2, len(transactions))
+
+        self.assertEqual(0, result['imported'])
+        self.assertEqual(2, result['matched'])
+
+    def test_import_mismatch(self):
+        account = BankAccount.objects.create(
+            name='Test',
+            multiplier=1
+        )
+
+        test_input = [
+            'Date,Description,Amount,Balance',
+            '02/09/2023,"Withdrawl Merchant",($25.00),$9999.99',
+            '02/12/2023,"Deposit Merchant",$10.00,$9999.99'
+        ]
+        service.import_transactions(account, test_input)
+        test_input.append('02/12/2023,"Deposit Merchant",$10.00,$9999.99')
+        result = service.import_transactions(account, test_input)
+
+        self.assertEqual(0, result['imported'])
+        self.assertEqual(1, result['matched'])
+        self.assertEqual(2, len(result['error']))
 
     def test_suggest_links(self):
         account = BankAccount.objects.create(
