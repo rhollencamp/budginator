@@ -76,6 +76,31 @@ class ServiceTests(TestCase):
         self.assertEqual(1000, transactions[1].amount)
         self.assertEqual('Deposit Merchant', transactions[1].merchant)
 
+    def test_import_withdrawls_deposits(self):
+        account = BankAccount.objects.create(
+            name='Test',
+            multiplier=1
+        )
+
+        test_input = [
+            'Date,Description,Withdrawals,Deposits,Category,Balance',
+            '"03/05/2023","APPLE.COM/BILL 866-712-7753 CA","$18.98","","Electronics"',
+            '"03/04/2023","AMZN Mktp US Amzn.com/bill WA","","$21.24","Education"'
+        ]
+        result = service.import_transactions(account, test_input)
+        self.assertEqual(2, result['imported'])
+
+        transactions = ImportedTransaction.objects.all().order_by('date')
+
+        self.assertEqual(date(2023, 3, 4), transactions[0].date)
+        self.assertEqual('AMZN Mktp US Amzn.com/bill WA', transactions[0].merchant)
+        self.assertEqual(2124, transactions[0].amount)
+
+        self.assertEqual(date(2023, 3, 5), transactions[1].date)
+        self.assertEqual('APPLE.COM/BILL 866-712-7753 CA', transactions[1].merchant)
+        self.assertEqual(-1898, transactions[1].amount)
+
+
     def test_import_dedupe(self):
         account = BankAccount.objects.create(
             name='Test',
