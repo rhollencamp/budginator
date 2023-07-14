@@ -6,7 +6,7 @@ class BankAccount(models.Model):
     multiplier = models.IntegerField(
         choices=[(-1, 'Debits'), (1, 'Credits')],
         verbose_name="Positive Numbers Are")
-    
+
     def __str__(self):
         return f"{self.name}"
 
