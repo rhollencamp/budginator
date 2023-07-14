@@ -5,6 +5,7 @@ class Budget(models.Model):
     amount = models.PositiveIntegerField()
     icon = models.CharField(max_length=4)
     name = models.CharField(max_length=128)
+    start_date = models.DateField(default='2023-01-01')
 
     def __str__(self):
         return f"{self.name}"
