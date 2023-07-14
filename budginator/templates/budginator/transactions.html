@@ -20,7 +20,7 @@
             <td>{% if forloop.first %}{{ transaction.date | date:"M j" }}{% endif %}</td>
             <td>{% if forloop.first %}{{ transaction.merchant }}{% endif %}</td>
             <td>{{ split.budget.name }}</td>
-            <td class="text-end">{{ split.amount | floatformat:2 }}</td>
+            <td class="text-end">{{ split.amount | amount }}</td>
             <td>{{ split.note }}</td>
           </tr>
           {% endfor %}

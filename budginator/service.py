@@ -13,7 +13,7 @@ def calculate_budgets_available() -> dict:
         amount = budget.amount * num_months
 
         for split in (x for x in splits if x.budget == budget):
-            amount -= split.amount
+            amount += split.amount
         result[budget.name] = amount
     return result
 
@@ -24,6 +24,8 @@ def parse_amount(amount: str) -> int:
         multiplier = -1
         amount = amount[1:]
     parts = amount.split('.')
+    if len(parts) == 1:
+        parts = [amount, 0]
     if len(parts) != 2:
         return None
     result = int(parts[0]) * 100

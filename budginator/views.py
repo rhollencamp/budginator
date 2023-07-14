@@ -5,13 +5,14 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_GET
 
 from .models import Budget, TrackedTransaction, TrackedTransactionSplit
-from .service import parse_amount
+from .service import calculate_budgets_available, parse_amount
 
 
 @require_GET
 def index(request: HttpRequest):
     context = {
-        'budgets': Budget.objects.order_by('name')
+        'budgets': Budget.objects.order_by('name'),
+        'available': calculate_budgets_available()
     }
     return render(request, 'budginator/index.html', context)
 
