@@ -1,8 +1,10 @@
+from django.db import transaction
 from django.http import HttpResponseRedirect, HttpRequest
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_GET
 
+from . import parse_amount
 from .models import Budget, TrackedTransaction, TrackedTransactionSplit
 
 
@@ -24,6 +26,44 @@ def list_transactions(request: HttpRequest):
 
 @csrf_exempt # TODO fix csrf
 @require_http_methods(['GET', 'POST'])
+@transaction.atomic
+def edit_transaction(request: HttpRequest):
+    if request.method == 'GET':
+        context = {
+            'transaction': get_object_or_404(TrackedTransaction, pk=request.GET['transaction']),
+            'budgets': Budget.objects.order_by('name')
+        }
+        return render(request, 'budginator/editTransaction.html', context)
+    else:
+        transaction = get_object_or_404(TrackedTransaction, pk=request.POST['transaction'])
+        # todo don't update stuff if linked to an import
+        transaction.amount = parse_amount(request.POST['amount'])
+        transaction.date = request.POST['date']
+        transaction.merchant = request.POST['merchant']
+        transaction.save()
+
+        # splits
+        existing_splits = {x.id: x for x in transaction.splits.all()}
+
+        for i, splitBudget in enumerate(request.POST.getlist('splitBudget')):
+            if splitBudget:
+                split = existing_splits.pop(int(splitBudget), None)
+                if not split:
+                    budget = get_object_or_404(Budget, pk=splitBudget)
+                    split = TrackedTransactionSplit(budget=budget, transaction=transaction)
+                split.amount = parse_amount(request.POST.getlist('splitAmount')[i])
+                split.note = request.POST.getlist('splitNote')[i]
+                split.save()
+        # anything left in existing_splits can be deleted
+        for split in existing_splits.values():
+            split.delete()
+        return HttpResponseRedirect(f'/transactions/edit?transaction={transaction.id}')
+
+
+
+@csrf_exempt # TODO fix csrf
+@require_http_methods(['GET', 'POST'])
+@transaction.atomic
 def track(request: HttpRequest):
     if request.method == 'GET':
         context = {
@@ -33,13 +73,13 @@ def track(request: HttpRequest):
     else:
         budget = get_object_or_404(Budget, pk=request.POST['budget'])
         transaction = TrackedTransaction.objects.create(
-            amount=int(request.POST['amount']) * int(request.POST['multiplier']),
+            amount=parse_amount(request.POST['amount']) * int(request.POST['multiplier']),
             date=request.POST['date'],
             merchant=request.POST['merchant']
         )
 
         TrackedTransactionSplit.objects.create(
-            amount=int(request.POST['amount']) * int(request.POST['multiplier']),
+            amount=parse_amount(request.POST['amount']) * int(request.POST['multiplier']),
             budget=budget,
             note=request.POST['note'],
             transaction=transaction

@@ -16,7 +16,7 @@
         <tbody>
           {% for transaction in transactions %}
           {% for split in transaction.splits.all %}
-          <tr>
+          <tr data-transactionid="{{ transaction.id }}">
             <td>{% if forloop.first %}{{ transaction.date | date:"M j" }}{% endif %}</td>
             <td>{% if forloop.first %}{{ transaction.merchant }}{% endif %}</td>
             <td>{{ split.budget.name }}</td>
@@ -34,7 +34,7 @@
     document.addEventListener("DOMContentLoaded", function(event) {
       document.querySelectorAll(".table > tbody > tr").forEach(function(row) {
         row.addEventListener("click", function(event) {
-          document.location = `/transactions/${row.dataset.transactionid}`;
+          document.location = `/transactions/edit?transaction=${row.dataset.transactionid}`;
         });
       });
     });
