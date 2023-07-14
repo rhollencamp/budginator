@@ -9,6 +9,7 @@
             <td>Date</td>
             <td>Merchant</td>
             <td class="text-end">Amount</td>
+            <td></td>
           </tr>
         </thead>
         <tbody>
@@ -17,6 +18,16 @@
             <td>{{ transaction.date | date:"M j Y" }}</td>
             <td>{{ transaction.merchant }}</td>
             <td class="text-end">{{ transaction.amount | amount }}</td>
+            <td>
+              <button type="button" class="btn btn-light" data-bs-toggle="modal"
+                                                          data-bs-target="#linkModal"
+                                                          data-linkable-transaction="{{ transaction.id }}"
+                                                          data-linkable-date="{{ transaction.date | date:"M j Y" }}"
+                                                          data-linkable-merchant="{{ transaction.merchant }}"
+                                                          data-linkable-amount="{{ transaction.amount | amount }}">
+                🔗
+              </button>
+            </td>
           </tr>
           {% endfor %}
         </tbody>
@@ -24,12 +35,59 @@
     </div>
   </div>
 
+  <div class="modal" id="linkModal" tabindex="-1" aria-labelledby="linkModalLabel" aria-hidden="true">
+    <form action="/transactions/linkable" method="post">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="linkModalLabel">Link Transaction</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="link-transaction" name="transaction">
+            <div class="mb-3">
+              <label for="link-date" class="col-form-label">Date:</label>
+              <input type="text" class="form-control" id="link-date" readonly="readonly">
+            </div>
+            <div class="mb-3">
+              <label for="link-merchant" class="col-form-label">Merchant:</label>
+              <input type="text" class="form-control" id="link-merchant" readonly="readonly">
+            </div>
+            <div class="mb-3">
+              <label for="link-amount" class="col-form-label">Amount:</label>
+              <input type="text" class="form-control" id="link-amount" readonly="readonly">
+            </div>
+            <div class="mb-3">
+              <label for="link-budget" class="col-form-label">Budget:</label>
+              <select class="form-control" id="link-budget" name="budget">
+                {% for budget in budgets %}
+                <option value="{{ budget.id }}">{{ budget.icon }} {{ budget.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="link-note" class="col-form-label">Note:</label>
+              <input type="text" class="form-control" id="link-note" name="note">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
   <script type="text/javascript">
     document.addEventListener("DOMContentLoaded", function(event) {
-      document.querySelectorAll(".table > tbody > tr").forEach(function(row) {
-        row.addEventListener("click", function(event) {
-          document.location = `/transactions/edit?transaction=${row.dataset.transactionid}`;
-        });
+      const linkModal = document.getElementById("linkModal")
+      linkModal.addEventListener("show.bs.modal", event => {
+        button = event.relatedTarget
+        document.getElementById("link-amount").value = button.getAttribute("data-linkable-amount")
+        document.getElementById("link-date").value = button.getAttribute("data-linkable-date")
+        document.getElementById("link-merchant").value = button.getAttribute("data-linkable-merchant")
+        document.getElementById("link-transaction").value = button.getAttribute("data-linkable-transaction")
       });
     });
   </script>

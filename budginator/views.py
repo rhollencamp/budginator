@@ -106,9 +106,34 @@ def import_transactions(request: HttpRequest):
     return render(request, 'budginator/importSummary.html', result)
 
 
-@require_GET
+@atomic
+@csrf_exempt  # TODO fix csrf
+@require_http_methods(['GET', 'POST'])
 def linkable_transactions(request: HttpRequest):
-    context = {
-        'transactions': models.ImportedTransaction.objects.filter(transaction=None)
-    }
-    return render(request, 'budginator/listLinkable.html', context)
+    if request.method == 'GET':
+        transactions = models.ImportedTransaction.objects.filter(transaction=None).order_by('-date')
+        context = {
+            'budgets': models.Budget.objects.all().order_by('name'),
+            'transactions':  transactions
+        }
+        return render(request, 'budginator/listLinkable.html', context)
+    imported = get_object_or_404(models.ImportedTransaction, pk=request.POST['transaction'])
+    budget = get_object_or_404(models.Budget, pk=request.POST['budget'])
+
+    tracked = models.TrackedTransaction.objects.create(
+        amount=imported.amount,
+        date=imported.date,
+        merchant=imported.merchant
+    )
+
+    models.TrackedTransactionSplit.objects.create(
+        amount=imported.amount,
+        budget=budget,
+        note=request.POST['note'],
+        transaction=tracked
+    )
+
+    imported.transaction = tracked
+    imported.save()
+
+    return HttpResponseRedirect('/transactions/linkable')
