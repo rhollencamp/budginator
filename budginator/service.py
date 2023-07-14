@@ -1,6 +1,8 @@
+from collections import OrderedDict
 from csv import DictReader
 from datetime import date
 from datetime import datetime
+from datetime import timedelta
 from django.db.transaction import atomic
 
 from . import models
@@ -18,6 +20,29 @@ def calculate_budgets_available() -> dict:
         for split in (x for x in splits if x.budget == budget):
             amount += split.amount
         result[budget.name] = amount
+    return result
+
+
+def calculate_budgets_monthly() -> dict:
+    # create result map seeded with monthly budget per year-month
+    result = {}
+    for budget in models.Budget.objects.all():
+        result[budget.id] = OrderedDict()
+
+        curdate = date.today().replace(day=1)
+        while curdate >= budget.start_date.replace(day=1):
+            if not curdate.year in result[budget.id]:
+                result[budget.id][curdate.year] = OrderedDict()
+            result[budget.id][curdate.year][curdate.month] = budget.amount
+            curdate = curdate - timedelta(days=1)
+            curdate = curdate.replace(day=1)
+
+    for split in models.TrackedTransactionSplit.objects.prefetch_related('budget', 'transaction'):
+        budget_id = split.budget.id
+        year = split.transaction.date.year
+        month = split.transaction.date.month
+        result[budget_id][year][month] += split.amount
+
     return result
 
 

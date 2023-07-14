@@ -24,6 +24,21 @@ class ServiceTests(TestCase):
         self.assertEqual(
             2, service.calculate_num_months(date(2022, 12, 30), date(2023, 1, 1)))
 
+    def test_calculate_budgets_monthly(self):
+        # create a budget starting last month
+        start_date = date.today().replace(day=1) - timedelta(days=1)
+
+        budget = Budget.objects.create(
+            amount=30000,
+            icon='X',
+            name='Test',
+            start_date=start_date
+        )
+
+        monthly = service.calculate_budgets_monthly()
+        self.assertEqual(2, len(monthly[budget.id][start_date.year]))
+        self.assertEqual(30000, monthly[budget.id][start_date.year][start_date.month])
+
     def test_calculate_budgets_available(self):
         # create a budget starting last month
         start_date = date.today().replace(day=1) - timedelta(days=1)
