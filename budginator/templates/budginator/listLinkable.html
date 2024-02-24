@@ -10,19 +10,18 @@
         <input type="hidden" name="imported" value="{{ suggestion.0.id }}">
         <input type="hidden" name="tracked" value="{{ suggestion.1.id }}">
         <div class="row">
-          <div class="col-2">{{ suggestion.0.date }}</div>
-          <div class="col-8">{{ suggestion.0.merchant }}</div>
-          <div class="col-2">{{ suggestion.0.amount | amount }}</div>
+          <div class="col-12 col-xl-2">{{ suggestion.0.date }}</div>
+          <div class="col-12 col-xl-8 text-truncate">{{ suggestion.0.merchant }}</div>
+          <div class="col-12 col-xl-2 text-end">{{ suggestion.0.amount | amount }}</div>
         </div>
         <div class="row">
-          <div class="col-2">{{ suggestion.1.date }}</div>
-          <div class="col-8">{{ suggestion.1.merchant }}</div>
-          <div class="col-2">{{ suggestion.1.amount | amount }}</div>
+          <div class="col-12 col-xl-2">{{ suggestion.1.date }}</div>
+          <div class="col-12 col-xl-8 text-truncate">{{ suggestion.1.merchant }}</div>
+          <div class="col-12 col-xl-2 text-end">{{ suggestion.1.amount | amount }}</div>
         </div>
         <div class="row mb-1">
-          <div class="col-10"></div>
-          <div class="col-2">
-            <button type="submit" class="btn btn-light">Link</button>
+          <div class="col-12 d-grid">
+            <button type="submit" class="btn btn-secondary">Link</button>
           </div>
         </div>
       </form>
@@ -39,7 +38,7 @@
 {% cycle '' 'bg-light' as rowcolor silent %}
       <div class="row py-2 align-items-center {{ rowcolor }}">
         <div class="col-12 col-xl-2">{{ transaction.date | date:"M j Y" }}</div>
-        <div class="col-12 col-xl-7">{{ transaction.merchant }}</div>
+        <div class="col-12 col-xl-7 text-truncate">{{ transaction.merchant }}</div>
         <div class="col-12 col-xl-2 text-end">{{ transaction.amount | amount }}</div>
         <div class="col-12 col-xl-1">
           <button type="button" class="btn btn-secondary" data-bs-toggle="modal"
