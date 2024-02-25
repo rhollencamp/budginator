@@ -19,7 +19,7 @@
         <div class="mb-3">
           <label for="amount" class="form-label">Amount</label>
           <div class="input-group">
-            <span class="input-group-text">$</span>
+            <span class="input-group-text">💸</span>
             {% comment %} TODO readonly {% endcomment %}
             <input type="text" class="form-control" id="amount" name="amount" value="{{ transaction.amount | amount }}">
           </div>
@@ -31,23 +31,29 @@
         {% for split in transaction.splits.all %}
         <div class="row mb-4 mb-xl-2">
           <div class="col-12 col-xl-3 mb-1 mb-xl-0">
-            <select class="form-control" name="splitBudget">
-              <option></option>
-              {% for budget in budgets %}
-              <option value="{{ budget.id }}" {% if budget.name == split.budget.name %}selected="selected"{% endif %}>
-                {{ budget.icon }} {{ budget.name }}
-              </option>
-              {% endfor %}
-            </select>
+            <div class="input-group">
+              <span class="input-group-text">✉️</span>
+              <select class="form-control" name="splitBudget">
+                <option></option>
+                {% for budget in budgets %}
+                <option value="{{ budget.id }}" {% if budget.name == split.budget.name %}selected="selected"{% endif %}>
+                  {{ budget.icon }} {{ budget.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
           </div>
           <div class="col-12 col-xl-3 mb-1 mb-xl-0">
             <div class="input-group">
-              <span class="input-group-text">$</span>
+              <span class="input-group-text">💸</span>
               <input type="text" class="form-control" name="splitAmount" value="{{ split.amount | amount }}">
             </div>
           </div>
           <div class="col-12 col-xl-6 mb-1 mb-xl-0">
-            <input type="text" class="form-control" name="splitNote" value="{{ split.note }}">
+            <div class="input-group">
+              <span class="input-group-text">✏️</span>
+              <input type="text" class="form-control" name="splitNote" value="{{ split.note }}">
+            </div>
           </div>
         </div>
         {% endfor %}
@@ -56,21 +62,27 @@
         {% for x in "xxxxx" %}
         <div class="row mb-4 mb-xl-2">
           <div class="col-12 col-xl-3 mb-1 mb-xl-0">
-            <select class="form-control" name="splitBudget">
-              <option></option>
-              {% for budget in budgets %}
-              <option value="{{ budget.id }}">{{ budget.icon }} {{ budget.name }}</option>
-              {% endfor %}
-            </select>
+            <div class="input-group">
+              <span class="input-group-text">✉️</span>
+              <select class="form-control" name="splitBudget">
+                <option></option>
+                {% for budget in budgets %}
+                <option value="{{ budget.id }}">{{ budget.icon }} {{ budget.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
           </div>
           <div class="col-12 col-xl-3 mb-1 mb-xl-0">
             <div class="input-group">
-              <span class="input-group-text">$</span>
+              <span class="input-group-text">💸</span>
               <input type="text" inputmode="decimal" class="form-control" name="splitAmount">
             </div>
           </div>
           <div class="col-12 col-xl-6 mb-1 mb-xl-0">
-            <input type="text" class="form-control" name="splitNote">
+            <div class="input-group">
+              <span class="input-group-text">✏️</span>
+              <input type="text" class="form-control" name="splitNote">
+            </div>
           </div>
         </div>
         {% endfor %}
