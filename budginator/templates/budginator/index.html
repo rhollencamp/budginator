@@ -8,7 +8,7 @@
           <span class="w-100">{{ budget.icon }} {{ budget.name }}</span>
 {% if budget.amount != 0 %}
 {% with budget_available=available|dictitem:budget.name %}
-          <span class="me-2 badge rounded-pill text-bg-{% if budget_available > 0 %}success{% else %}danger{% endif %}">
+          <span class="badge rounded-pill text-bg-{% if budget_available > 0 %}success{% else %}danger{% endif %}">
             {{ budget_available | amount }}
           </span>
 {% endwith %}
