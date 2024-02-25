@@ -29,8 +29,8 @@
 
         {% comment %} splits that already exist {% endcomment %}
         {% for split in transaction.splits.all %}
-        <div class="row mb-3">
-          <div class="col">
+        <div class="row mb-4 mb-xl-2">
+          <div class="col-12 col-xl-3 mb-1 mb-xl-0">
             <select class="form-control" name="splitBudget">
               <option></option>
               {% for budget in budgets %}
@@ -40,13 +40,13 @@
               {% endfor %}
             </select>
           </div>
-          <div class="col">
+          <div class="col-12 col-xl-3 mb-1 mb-xl-0">
             <div class="input-group">
               <span class="input-group-text">$</span>
               <input type="text" class="form-control" name="splitAmount" value="{{ split.amount | amount }}">
             </div>
           </div>
-          <div class="col-6">
+          <div class="col-12 col-xl-6 mb-1 mb-xl-0">
             <input type="text" class="form-control" name="splitNote" value="{{ split.note }}">
           </div>
         </div>
@@ -54,8 +54,8 @@
 
         {% comment %} empty rows for entering new splits {% endcomment %}
         {% for x in "xxxxx" %}
-        <div class="row mb-3">
-          <div class="col">
+        <div class="row mb-4 mb-xl-2">
+          <div class="col-12 col-xl-3 mb-1 mb-xl-0">
             <select class="form-control" name="splitBudget">
               <option></option>
               {% for budget in budgets %}
@@ -63,13 +63,13 @@
               {% endfor %}
             </select>
           </div>
-          <div class="col">
+          <div class="col-12 col-xl-3 mb-1 mb-xl-0">
             <div class="input-group">
               <span class="input-group-text">$</span>
               <input type="text" inputmode="decimal" class="form-control" name="splitAmount">
             </div>
           </div>
-          <div class="col-6">
+          <div class="col-12 col-xl-6 mb-1 mb-xl-0">
             <input type="text" class="form-control" name="splitNote">
           </div>
         </div>
