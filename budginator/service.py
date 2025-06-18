@@ -4,8 +4,11 @@ from datetime import date
 from datetime import datetime
 from datetime import timedelta
 from django.db.transaction import atomic
+from logging import getLogger
 
 from . import models
+
+_logger = getLogger(__name__)
 
 
 def calculate_budgets_available() -> dict:
@@ -31,7 +34,7 @@ def calculate_budgets_monthly() -> dict:
 
         curdate = date.today().replace(day=1)
         while curdate >= budget.start_date.replace(day=1):
-            if not curdate.year in result[budget.id]:
+            if curdate.year not in result[budget.id]:
                 result[budget.id][curdate.year] = OrderedDict()
             result[budget.id][curdate.year][curdate.month] = budget.amount
             curdate = curdate - timedelta(days=1)
@@ -41,7 +44,11 @@ def calculate_budgets_monthly() -> dict:
         budget_id = split.budget.id
         year = split.transaction.date.year
         month = split.transaction.date.month
-        result[budget_id][year][month] += split.amount
+        try:
+            result[budget_id][year][month] += split.amount
+        except KeyError:
+            # Log an error if the budget_id/year/month combination is missing
+            _logger.error(f"Missing entry for budget_id={budget_id}, transaction={split.transaction.id}")
 
     return result
 
