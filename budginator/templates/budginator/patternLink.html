@@ -1,0 +1,54 @@
+{% extends "budginator/layout.html" %}
+{% block content %}
+    <div class="card mb-3">
+        <div class="card-header">Auto Link</div>
+        <div class="card-body">
+{% if not request.GET.pattern %}
+            <form action="/transactions/pattern-link" method="get">
+                <input type="text" name="pattern" value="{{ request.GET.pattern }}">
+                <button type="submit" class="btn btn-secondary">Search</button>
+            </form>
+{% else %}
+            <form action="/transactions/pattern-link" method="post">
+                {% csrf_token %}
+
+                <!-- budget-->
+                <div class="row py-2">
+                    <div class="col-12 col-xl-2">Budget</div>
+                    <div class="col-12 col-xl-10">
+                        <select class="form-control" name="budget" required>
+                            <option value="" disabled selected>Select a budget</option>
+{% for budget in budgets %}
+                            <option value="{{ budget.id }}" {% if budget.name == split.budget.name %}selected="selected"{% endif %}>
+                                {{ budget.icon }} {{ budget.name }}
+                            </option>
+{% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- submit -->
+                 <div class="row py-2">
+                    <div class="col-12 col-xl-2"></div>
+                    <div class="col-12 col-xl-10">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </div>
+
+                <!-- matching linkables -->
+{% for transaction in transactions %}
+{% cycle '' 'bg-light' as rowcolor silent %}
+                <div class="row py-2 align-items-center {{ rowcolor }}">
+                    <div class="col-12 col-xl-2">{{ transaction.date | date:"M j Y" }}</div>
+                    <div class="col-12 col-xl-7 text-truncate">{{ transaction.merchant }}</div>
+                    <div class="col-12 col-xl-2 text-end">{{ transaction.amount | amount }}</div>
+                    <div class="col-12 col-xl-1">
+                        <input class="form-check-input" type="checkbox" name="transactions" id="transaction-{{ transaction.id }}" value="{{ transaction.id }}" checked="checked">
+                    </div>
+                </div>
+{% endfor %}
+            </form>
+{% endif %}
+        </div>
+    </div>
+{% endblock %}

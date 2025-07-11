@@ -9,6 +9,7 @@ urlpatterns = [
     path('transactions/edit', views.edit_transaction),
     path('transactions/import', views.import_transactions),
     path('transactions/linkable', views.linkable_transactions),
+    path('transactions/pattern-link', views.pattern_link_transactions),
     path('transactions/track', views.track),
 
     # favicon stuff

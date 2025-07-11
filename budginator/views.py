@@ -1,4 +1,5 @@
 from io import StringIO
+from re import compile as regex_compile
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.transaction import atomic
@@ -193,3 +194,40 @@ def linkable_transactions(request: HttpRequest):
     imported.save()
 
     return HttpResponseRedirect('/transactions/linkable')
+
+
+@atomic
+@csrf_protect
+@require_http_methods(['GET', 'POST'])
+@staff_member_required
+def pattern_link_transactions(request: HttpRequest):
+    # viewing linkable page
+    if request.method == 'GET':
+        context = {}
+        pattern = request.GET.get('pattern')
+        if pattern:
+            regex = regex_compile(pattern)
+            transactions = models.ImportedTransaction.objects.filter(transaction=None).order_by('-date')
+            context['transactions'] = [t for t in transactions if regex.search(t.merchant)]
+            context['budgets'] = models.Budget.objects.all().order_by('name')
+        return render(request, 'budginator/patternLink.html', context)
+    else:
+        budget = get_object_or_404(models.Budget, pk=request.POST['budget'])
+        for transaction_id in request.POST.getlist('transactions'):
+            imported = get_object_or_404(models.ImportedTransaction, pk=transaction_id)
+
+            tracked = models.TrackedTransaction.objects.create(
+                amount=imported.amount,
+                date=imported.date,
+                merchant=imported.merchant
+            )
+
+            models.TrackedTransactionSplit.objects.create(
+                amount=imported.amount,
+                budget=budget,
+                transaction=tracked
+            )
+
+            imported.transaction = tracked
+            imported.save()
+    return HttpResponseRedirect('/transactions/pattern-link')
