@@ -15,7 +15,8 @@
       </div>
       <div class="mb-3">
         <label for="budget" class="form-label">Budget</label>
-        <select class="form-control" name="budget" id="budget">
+        <select class="form-control" name="budget" id="budget" required>
+          <option value="" disabled selected>Select a budget</option>
 {% for budget in budgets %}
           <option value="{{ budget.id }}" {% if selected_budget and budget.id == selected_budget.id %}selected="selected"{% endif %}>{{ budget.icon }} {{ budget.name }}</option>
 {% endfor %}
