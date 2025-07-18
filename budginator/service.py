@@ -57,6 +57,8 @@ def parse_amount(amount: str) -> int:
     multiplier = 1
     amount = amount.replace('$', '')
     amount = amount.replace(',', '')
+    amount = amount.replace(' ', '')
+    amount = amount.replace('+', '')
     if amount.startswith('-'):
         multiplier = -1
         amount = amount[1:]
@@ -145,7 +147,10 @@ def _parse_csv_row(row: dict, multiplier: int) -> dict:
     if not row_amount:
         raise ValueError('Could not parse an amount')
 
-    row_date = datetime.strptime(row['Date'], '%m/%d/%Y').date()
+    try:
+        row_date = datetime.strptime(row['Date'], '%m/%d/%Y').date()
+    except ValueError:
+        row_date = datetime.strptime(row['Date'], '%Y-%m-%d').date()
     row_merchant = row['Description']
 
     return {
