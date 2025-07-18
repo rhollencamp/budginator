@@ -80,7 +80,8 @@
             </div>
             <div class="mb-3">
               <label for="link-budget" class="col-form-label">Budget:</label>
-              <select class="form-control" id="link-budget" name="budget">
+              <select class="form-control" id="link-budget" name="budget" required>
+                <option value="" disabled selected>Select a budget</option>
                 {% for budget in budgets %}
                 <option value="{{ budget.id }}">{{ budget.icon }} {{ budget.name }}</option>
                 {% endfor %}
