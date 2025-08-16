@@ -11,6 +11,7 @@ urlpatterns = [
     path('transactions/linkable', views.linkable_transactions),
     path('transactions/pattern-link', views.pattern_link_transactions),
     path('transactions/track', views.track),
+    path('db-backup', views.db_backup),
 
     # favicon stuff
     path('android-chrome-192x192.png', views.favicon_file),

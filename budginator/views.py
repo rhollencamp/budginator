@@ -2,6 +2,7 @@ from io import StringIO
 from re import compile as regex_compile
 
 from django.contrib.admin.views.decorators import staff_member_required
+from django.core import management
 from django.db.transaction import atomic
 from django.http import FileResponse, HttpResponseRedirect, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
@@ -231,3 +232,14 @@ def pattern_link_transactions(request: HttpRequest):
             imported.transaction = tracked
             imported.save()
     return HttpResponseRedirect('/transactions/pattern-link')
+
+
+@atomic
+@require_GET
+@staff_member_required
+def db_backup(_: HttpRequest):
+    out = StringIO()
+    management.call_command('dumpdata', stdout=out)
+    response = HttpResponse(out.getvalue(), content_type='application/json')
+    response['Content-Disposition'] = 'attachment; filename="db_backup.json"'
+    return response
