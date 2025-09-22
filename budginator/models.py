@@ -43,3 +43,11 @@ class ImportedTransaction(models.Model):
     merchant = models.CharField(max_length=255)
     transaction = models.OneToOneField(
         TrackedTransaction, null=True, blank=True, on_delete=models.SET_NULL, related_name='imported')
+
+
+class AutoLinkExpression(models.Model):
+    expression = models.CharField(max_length=255)
+    budget = models.ForeignKey(Budget, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.expression} -> {self.budget.name}"

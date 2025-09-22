@@ -1,0 +1,31 @@
+{% extends "budginator/layout.html" %}
+{% block content %}
+  <div class="card mb-3">
+    <div class="card-header">Auto Link</div>
+    <div class="card-body">
+      <form action="/transactions/auto-link" method="post">
+        {% csrf_token %}
+
+{% for key, value in suggested_links.items %}
+        <div class="row">
+          <div class="col-12 col-xl-1">
+            <input type="checkbox" name="link" id="link{{ key }}" value="{{ key }}|{{ value.budget_id }}" checked>
+          </div>
+          <div class="col-12 col-xl-2">{{ value.budget_name }}</div>
+          <div class="col-12 col-xl-7 text-truncate">{{ value.merchant }}</div>
+          <div class="col-12 col-xl-2 text-end">{{ value.amount | amount}}</div>
+        </div>
+{% endfor %}
+
+        <!-- submit -->
+        <div class="row py-2">
+          <div class="col-12 col-xl-2"></div>
+          <div class="col-12 col-xl-10">
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+{% endblock %}
