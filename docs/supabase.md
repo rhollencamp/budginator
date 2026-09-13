@@ -110,24 +110,35 @@ clicking never meets this. A schema applied as raw SQL has to say it, which is
 what the grants migration does: `authenticated` gets table access, `anon` gets
 schema usage alone, and `alter default privileges` covers tables added later.
 
-## Row Level Security
+## One shared ledger
 
-Every table has `user_id uuid not null default auth.uid()` and one policy:
+There is no `user_id` on any table. Every signed-in user sees the same ledger:
 
 ```sql
-using (user_id = (select auth.uid()))
-with check (user_id = (select auth.uid()))
+create policy "signed in" on public.budgets
+  for all to authenticated using (true) with check (true);
 ```
 
-Both halves matter. `using` decides which rows you can see and change; `with
-check` decides what a row may look like afterwards, and without it an update
-could hand a row to another account. The `(select auth.uid())` wrapping is not
-cosmetic — it lets Postgres evaluate the function once per statement rather than
-once per row, which on a whole-table read is the difference between a fast query
-and a slow one.
+This is a household budget, kept by the people in the household, so per-user
+rows were the wrong shape — the schema started with them and the second person
+to sign in saw an empty app while budgeting against the same bank accounts.
+The shared-ledger migration drops the column and rewrites the policies.
 
-Because `user_id` defaults to `auth.uid()`, no insert in `src/data/api.ts` names
-it. That is deliberate: there is no code path that could name the wrong one.
+**What keeps the ledger private is therefore who can sign in at all.** Public
+sign-up is turned off for the project, and users are added by invitation. That
+is a project setting rather than a database constraint, which is the tradeoff
+worth understanding: re-enable sign-up and anyone who registers can read
+everything. If that ever becomes a risk — sharing the URL more widely, say —
+the stricter form is a policy gated on an allowlist:
+
+```sql
+using ((select auth.jwt() ->> 'email') in ('you@example.com', 'them@example.com'))
+```
+
+RLS stays enabled and every table keeps a policy even though the policy admits
+all authenticated users. `anon` is refused twice over, holding neither a grant
+nor a policy, and a table with RLS enabled and no policy denies everyone — a
+confusing way to discover a missing grant later.
 
 ## Why there are RPC functions
 

@@ -130,16 +130,20 @@ running the app.
   file has against how many are recorded and inserts the difference. See
   `docs/budgeting.md`; the test that pins it is the idempotency case in
   `importer.test.ts`.
-- **Row Level Security is the whole access control story, but GRANT comes
-  first.** Every table has `user_id` defaulting to `auth.uid()` and one policy
-  with both `using` and `with check` — without the latter an update could hand a
-  row to another account. Policies alone are not enough, though: a role also
-  needs table privileges, and the two fail differently — a missing grant is
-  `permission denied for table ...`, while RLS excluding everything is a
-  silent empty result. A new table needs both, and the grants migration's
-  `alter default privileges` covers the second for anything added later. No insert in `api.ts` names `user_id`, so no code path can name the
-  wrong one. The publishable key ships in the bundle by design; a secret key
-  must never appear in this repo.
+- **One shared ledger, and sign-in is what guards it.** There is no `user_id`
+  column: this is a household budget kept by more than one person, so every
+  table's policy is `to authenticated using (true) with check (true)` and
+  everyone signed in sees the same data. What keeps it private is that public
+  sign-up is disabled for the project — a setting, not a constraint. Adding a
+  table means adding RLS and a policy to match, or it silently belongs to
+  nobody. `docs/supabase.md` has the allowlist form to tighten to if the
+  sign-in boundary ever stops being enough.
+- **GRANT comes before RLS.** A role needs table privileges as well as a
+  policy, and the two fail differently — a missing grant is `permission denied
+for table ...`, while RLS excluding everything is a silent empty result. A
+  new table needs both; the grants migration's `alter default privileges`
+  covers the second for anything added later. The publishable key ships in the
+  bundle by design; a secret key must never appear in this repo.
 - **Colour scheme before first paint:** the inline script in `index.html` sets
   `data-mantine-color-scheme` on `<html>` (Mantine's `<ColorSchemeScript>` can't
   run early enough in a client-only app). Its `localStorage` key and `auto`
