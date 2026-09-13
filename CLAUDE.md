@@ -130,6 +130,14 @@ running the app.
   file has against how many are recorded and inserts the difference. See
   `docs/budgeting.md`; the test that pins it is the idempotency case in
   `importer.test.ts`.
+- **Sign-in is a code, not a link, because of the PWA.** An installed PWA has
+  its own storage partition, so a magic link opened in Mail or Safari creates a
+  session in the browser and leaves the installed app signed out — on iOS there
+  is no way around it, and no Universal Links for web apps to make the link
+  open in the app. The emailed six-digit code is typed into whichever context
+  the person is actually using. This depends on `{{ .Token }}` being in the
+  project's Magic Link email template; without it the email has only a link and
+  nobody can sign in. See `docs/supabase.md`.
 - **One shared ledger, and sign-in is what guards it.** There is no `user_id`
   column: this is a household budget kept by more than one person, so every
   table's policy is `to authenticated using (true) with check (true)` and
