@@ -10,8 +10,15 @@
  * envelope balance that is optimistically right and then quietly wrong is the
  * failure this app most needs to avoid — so the reload is the design, not a
  * shortcut waiting to be replaced by a cache.
+ *
+ * Writing through covers every change the browser makes, which used to be all
+ * of them. It is not all of them once something else writes to the database —
+ * the bank sync, or the other person in the household on their own phone — and
+ * a tab left open overnight would sit on figures nobody had contradicted. So
+ * the ledger is also reloaded when the app comes back to the foreground, which
+ * on an installed PWA is what opening it means.
  */
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchLedger, type Ledger } from './api'
 
 const EMPTY: Ledger = {
@@ -21,6 +28,13 @@ const EMPTY: Ledger = {
   imported: [],
   expressions: [],
 }
+
+/**
+ * How old the ledger has to be before coming back to the app refetches it.
+ * Without a floor, every alt-tab is a request, and a few thousand rows is not
+ * a thing to ask for on the way past.
+ */
+const STALE_AFTER_MS = 60_000
 
 export interface LedgerState {
   ledger: Ledger
@@ -57,31 +71,98 @@ export function useLedger(enabled: boolean): LedgerState {
     setError(null)
   }
 
-  const reload = useCallback(async () => {
-    if (!enabled) return
+  // Which request is allowed to write to state. Reloads no longer happen one
+  // at a time — a save and a return to the foreground can overlap — and two
+  // requests can land in either order, so the older one's answer has to be
+  // dropped rather than applied on top of the newer one. Applying it would put
+  // a balance on screen that was right a moment ago and is now quietly wrong,
+  // which is the failure the read-through model exists to prevent.
+  const currentRequest = useRef(0)
+  const inFlight = useRef(false)
+  const loadedAt = useRef(0)
 
-    setRefreshing(true)
-    try {
-      setLedger(await fetchLedger())
-      setError(null)
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught))
-    } finally {
-      setRefreshing(false)
-      setLoaded(true)
-    }
-  }, [enabled])
+  const load = useCallback(
+    async (background: boolean) => {
+      if (!enabled) return
+
+      const request = currentRequest.current + 1
+      currentRequest.current = request
+      inFlight.current = true
+      // A refetch nobody asked for does not light up the header's progress
+      // indicator; coming back to the app would blink it every time.
+      if (!background) setRefreshing(true)
+
+      try {
+        const next = await fetchLedger()
+        if (request !== currentRequest.current) return
+
+        setLedger(next)
+        setError(null)
+        loadedAt.current = Date.now()
+      } catch (caught) {
+        if (request !== currentRequest.current) return
+
+        setError(caught instanceof Error ? caught.message : String(caught))
+        // `loadedAt` is deliberately left alone: a load that failed is not one
+        // the staleness floor should count, so the next time the app comes
+        // forward it tries again instead of waiting out the minute.
+      } finally {
+        // A superseded request cleans nothing up — the one that replaced it
+        // owns the flags now, and clearing them here would let a third start
+        // while the second is still out.
+        if (request === currentRequest.current) {
+          inFlight.current = false
+          if (!background) setRefreshing(false)
+          setLoaded(true)
+        }
+      }
+    },
+    [enabled],
+  )
+
+  const reload = useCallback(() => load(false), [load])
 
   useEffect(() => {
     // Fetching on mount is the case the rule's own guidance carves out —
     // synchronising React with an external system — and there is nothing to
     // derive during render because the data is not here yet. What trips the
-    // rule is `reload` flipping `refreshing` before its first await, which is
+    // rule is `load` flipping `refreshing` before its first await, which is
     // deliberate: the spinner belongs to the request, not to the render after
     // it lands.
     // oxlint-disable-next-line react/set-state-in-effect
-    void reload()
-  }, [reload])
+    void load(false)
+
+    // Signing out while a read is in flight would otherwise let the previous
+    // session's ledger land in an app that is no longer showing it.
+    return () => {
+      currentRequest.current += 1
+      inFlight.current = false
+    }
+  }, [load])
+
+  useEffect(() => {
+    if (!enabled) return
+
+    const refresh = () => {
+      if (document.visibilityState !== 'visible') return
+      if (inFlight.current) return
+      if (Date.now() - loadedAt.current < STALE_AFTER_MS) return
+
+      void load(true)
+    }
+
+    // Two events, because neither covers the other: `visibilitychange` is what
+    // fires for a tab brought forward or a PWA resumed from the background,
+    // and `focus` is what fires for a desktop window raised over another app
+    // without the page ever having been hidden.
+    document.addEventListener('visibilitychange', refresh)
+    window.addEventListener('focus', refresh)
+
+    return () => {
+      document.removeEventListener('visibilitychange', refresh)
+      window.removeEventListener('focus', refresh)
+    }
+  }, [enabled, load])
 
   const run = useCallback(
     async (action: () => Promise<unknown>) => {
@@ -91,10 +172,10 @@ export function useLedger(enabled: boolean): LedgerState {
         return caught instanceof Error ? caught.message : String(caught)
       }
 
-      await reload()
+      await load(false)
       return null
     },
-    [reload],
+    [load],
   )
 
   return {

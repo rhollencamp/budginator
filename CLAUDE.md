@@ -79,9 +79,11 @@ Tests live alongside the code they cover — Vitest with a jsdom environment
 (`vitest.config.ts`). `src/budget/*.test.ts` covers the domain and is where most
 of the coverage is; `src/ui/*.test.tsx` covers the two screens with real logic
 in them, the dashboard's figures and the split editor's balancing, rendered
-through `src/test/render.tsx` so they exercise the real theme. `App.tsx`, the
-data layer and the service-worker wiring aren't unit tested; verify those by
-running the app.
+through `src/test/render.tsx` so they exercise the real theme. `useLedger.ts`
+is tested against a mocked `api.ts`, for the reload rules rather than the
+queries — overlapping reads and what a return to the foreground does. `App.tsx`,
+the rest of the data layer and the service-worker wiring aren't unit tested;
+verify those by running the app.
 
 ## Gotchas
 
@@ -121,6 +123,12 @@ running the app.
   right and then quietly wrong, which is this app's worst failure mode. If the
   row count ever does become a problem, fix it in `api.ts` with a date-bounded
   read and a stored opening balance — not by scattering queries through views.
+  Writing through only covers what this browser did, so the ledger is reloaded
+  again whenever the app comes back to the foreground — the other phone in the
+  household and the bank sync both write without it. Those reloads overlap, and
+  `useLedger` drops a response that a newer request has already superseded: an
+  older answer applied on top of a newer one is the same quietly-wrong balance
+  by another route.
 - **The service worker caches the shell and no data.** The app opens instantly
   and offline; the ledger is always fetched fresh. A cached balance is one that
   can be wrong without saying so. Offline entry, if ever wanted, is an outbox —
