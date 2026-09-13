@@ -27,7 +27,8 @@ npm run dev
 ```
 
 Setting up the Supabase side — running the migrations, the auth redirect URLs,
-what the anon key is and is not — is in [`docs/supabase.md`](docs/supabase.md).
+what the publishable key is and is not — is in
+[`docs/supabase.md`](docs/supabase.md).
 
 ## Commands
 

@@ -63,7 +63,7 @@ function Shell() {
         <Alert color="red" title="Not configured">
           This build has no Supabase project to talk to. Set
           <code> VITE_SUPABASE_URL</code> and
-          <code> VITE_SUPABASE_ANON_KEY</code> and build again — see
+          <code> VITE_SUPABASE_PUBLISHABLE_KEY</code> and build again — see
           <code> .env.example</code>.
         </Alert>
       </Container>

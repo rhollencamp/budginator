@@ -30,13 +30,37 @@ which are the only way to write across more than one table atomically.
    `http://localhost:5173/` in development. Add each one you use. The trailing
    slash matters.
 
-5. Copy the project URL and the anon key from **Project Settings → API** into
-   `.env` (see `.env.example`).
+5. Copy the project URL and the publishable key from **Project Settings → API
+   Keys** into `.env` (see `.env.example`).
 
-The anon key is meant to ship in the bundle. It identifies the project and
-grants nothing by itself; the policies below are what stop one account reading
-another's ledger. The **service-role key bypasses RLS entirely** and must never
-appear in this repository or in a built bundle.
+## Which key
+
+A project shows two kinds, and only one of them belongs anywhere near this
+repository.
+
+| Key             | Looks like           | Where it goes                   |
+| --------------- | -------------------- | ------------------------------- |
+| **Publishable** | `sb_publishable_...` | `VITE_SUPABASE_PUBLISHABLE_KEY` |
+| **Secret**      | `sb_secret_...`      | Nowhere in this repo            |
+
+The publishable key is meant to ship in the bundle. It identifies the project
+and grants nothing by itself; the policies below are what stop one account
+reading another's ledger.
+
+A **secret key bypasses RLS entirely**. Everything this app is configured with
+is compiled into a public JavaScript file, so a secret key set here would hand
+the whole database to anyone who opens devtools — and making it a GitHub
+_secret_ rather than a variable does not help, because the build's own output is
+the thing that leaks it. There is no server tier here, so there is no correct
+place for one at all. The deploy workflow refuses to build if the value looks
+like a secret key.
+
+Older projects call these the **anon** and **service_role** keys, and a project
+that predates the change shows both namings. They are equivalent for this app's
+purposes: anon ↔ publishable, service_role ↔ secret. The publishable key is a
+drop-in for the anon key in `createClient`, which is why the rename needed no
+code change beyond the variable's name. If your dashboard offers both, prefer
+the `sb_publishable_...` one — the JWT-shaped legacy keys are on their way out.
 
 ## Running migrations
 

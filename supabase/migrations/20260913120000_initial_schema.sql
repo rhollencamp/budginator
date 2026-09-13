@@ -9,10 +9,10 @@
 --
 --  2. Every row belongs to a user, and Row Level Security is the only thing
 --     enforcing that. The app talks to PostgREST straight from the browser
---     with the anon key, so these policies are the access control — there is
---     no server tier to put a check in. `user_id` defaults to `auth.uid()` so
---     an insert never has to name it, and the `with check` clauses stop a
---     client from naming somebody else's.
+--     with the publishable key, so these policies are the access control —
+--     there is no server tier to put a check in. `user_id` defaults to
+--     `auth.uid()` so an insert never has to name it, and the `with check`
+--     clauses stop a client from naming somebody else's.
 
 create extension if not exists "pgcrypto";
 

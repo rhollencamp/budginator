@@ -10,8 +10,11 @@ declare const __GIT_SHA__: string
 interface ImportMetaEnv {
   /** The Supabase project URL, e.g. `https://abcdefgh.supabase.co`. */
   readonly VITE_SUPABASE_URL?: string
-  /** The project's anon key. Publishable by design; never the service key. */
-  readonly VITE_SUPABASE_ANON_KEY?: string
+  /**
+   * The project's publishable key (`sb_publishable_...`, formerly the anon
+   * key). Public by design. Never a secret key — those bypass RLS.
+   */
+  readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string
 }
 
 interface ImportMeta {

@@ -34,24 +34,42 @@ jobs:
       - name: Check the Supabase configuration is present
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
         run: |
-          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+          if [ -z "$VITE_SUPABASE_URL" ] ||
+             [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ]; then
             echo "::error::Set the repository variables VITE_SUPABASE_URL and" \
-              "VITE_SUPABASE_ANON_KEY under Settings -> Secrets and variables ->" \
-              "Actions -> Variables. They are variables rather than secrets: both" \
-              "are baked into the bundle and are public by design."
+              "VITE_SUPABASE_PUBLISHABLE_KEY under Settings -> Secrets and" \
+              "variables -> Actions -> Variables. They are variables rather than" \
+              "secrets: both are baked into the bundle and are public by design."
             exit 1
           fi
+
+          case "$VITE_SUPABASE_PUBLISHABLE_KEY" in
+            sb_secret_* | service_role* | *.*.*)
+              # A secret key bypasses Row Level Security, and everything here
+              # ends up in a public JavaScript file. Catching it costs one
+              # `case`; not catching it publishes the whole database. The
+              # `*.*.*` arm matches a JWT, which is the shape of both the old
+              # anon key and the old service_role key — neither belongs here
+              # now, and the two are not distinguishable without decoding them.
+              echo "::error::VITE_SUPABASE_PUBLISHABLE_KEY does not look like a" \
+                "publishable key. Use the sb_publishable_... key from Project" \
+                "Settings -> API Keys. A secret key must never be set here: it" \
+                "bypasses Row Level Security and this value is compiled into" \
+                "the public bundle."
+              exit 1
+              ;;
+          esac
 
       - run: npm run build
         env:
           # Repository variables, not secrets: both are baked into the bundle
-          # and are meant to be public. The anon key identifies the project and
-          # grants nothing on its own — Row Level Security is what guards the
-          # data. Never put the service-role key here.
+          # and are meant to be public. The publishable key identifies the
+          # project and grants nothing on its own — Row Level Security is what
+          # guards the data. Never put a secret key here.
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

@@ -134,7 +134,7 @@ running the app.
   `user_id` defaulting to `auth.uid()` and one policy with both `using` and
   `with check` — without the latter an update could hand a row to another
   account. No insert in `api.ts` names `user_id`, so no code path can name the
-  wrong one. The anon key ships in the bundle by design; the service-role key
+  wrong one. The publishable key ships in the bundle by design; a secret key
   must never appear in this repo.
 - **Colour scheme before first paint:** the inline script in `index.html` sets
   `data-mantine-color-scheme` on `<html>` (Mantine's `<ColorSchemeScript>` can't
