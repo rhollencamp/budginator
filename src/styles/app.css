@@ -1,0 +1,72 @@
+/* Mantine owns the look of the app; this file is only for what a theme object
+   cannot express. Keep it small — prefer theme tokens and component props. */
+
+:root[data-mantine-color-scheme='light'] {
+  /* Mantine points the page and card backgrounds at the same `white`, and this
+     design wants the cards to lift off the page. */
+  --mantine-color-body: #f3f6f4;
+  --app-header-bg: #ffffff;
+}
+
+:root[data-mantine-color-scheme='dark'] {
+  --app-header-bg: var(--mantine-color-dark-7);
+}
+
+/* `svh` is the viewport with the browser's retractable chrome shown, so a tab
+   gets a page as tall as what is actually visible rather than one that
+   rubber-bands under a toolbar that is not there yet. */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+}
+
+/* An installed app has no such chrome, and iOS misreports the dynamic units on
+   a cold start — which is every launch there, since a backgrounded PWA is
+   killed rather than suspended. A shell that opens short ends the document
+   short, leaving a band of page background below it. `vh` is the unit that
+   reads correctly from a cold start, so standalone takes it. Not both at once:
+   `max()` of the two hands a tab the taller figure, which is the rubber-band
+   the rule above exists to avoid. */
+@media (display-mode: standalone) {
+  .app-shell {
+    min-height: 100vh;
+  }
+}
+
+/* `viewport-fit=cover` in index.html lets the page run into whatever the device
+   does not consider safe — the home indicator, and the notch in landscape. Pad
+   the bars themselves rather than their inner containers, so the background
+   still spans full-bleed. */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding-top: env(safe-area-inset-top);
+  background-color: var(--app-header-bg);
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+/* The home-indicator gutter on an installed iOS PWA. A bare spacer rather than
+   padding on the main container, so a scrolling page still ends flush against
+   the bottom of the safe area. */
+.app-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Money is compared down a column, so every figure is set in a tabular face at
+   a fixed width — otherwise the decimal points wander and two amounts of the
+   same magnitude look different lengths. `tnum` is the OpenType feature that
+   does it for the proportional system font; the monospace stack is the
+   fallback where it is unavailable. */
+.amount {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  white-space: nowrap;
+}
+
+/* A table of transactions is wider than a phone. Let the table scroll inside
+   its own box rather than the page scrolling sideways under the header. */
+.table-scroll {
+  overflow-x: auto;
+}

@@ -1,0 +1,67 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run test
+
+      # Without these the build still succeeds and deploys an app whose only
+      # screen says it is not configured — a failure that looks like a working
+      # deploy. Fail here instead, where the reason is in the log.
+      - name: Check the Supabase configuration is present
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::Set the repository variables VITE_SUPABASE_URL and" \
+              "VITE_SUPABASE_ANON_KEY under Settings -> Secrets and variables ->" \
+              "Actions -> Variables. They are variables rather than secrets: both" \
+              "are baked into the bundle and are public by design."
+            exit 1
+          fi
+
+      - run: npm run build
+        env:
+          # Repository variables, not secrets: both are baked into the bundle
+          # and are meant to be public. The anon key identifies the project and
+          # grants nothing on its own — Row Level Security is what guards the
+          # data. Never put the service-role key here.
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
