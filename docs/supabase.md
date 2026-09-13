@@ -91,6 +91,25 @@ _and_ having something else apply it leaves the two disagreeing about what has
 run, which surfaces later as a `db push` failing on an object that already
 exists.
 
+## Two gates: GRANT, then RLS
+
+These are independent, and a schema needs both. GRANT decides whether a role may
+touch a table at all; RLS decides which rows it then sees. GRANT is checked
+first, so a table with perfect policies and no grant refuses every request.
+
+The two failures look nothing alike, which is the quickest way to tell them
+apart when something is denied:
+
+| Missing                | What you see                                    |
+| ---------------------- | ----------------------------------------------- |
+| **GRANT**              | `permission denied for table ...` (error 42501) |
+| **RLS allows no rows** | no error, an empty result                       |
+
+Supabase's dashboard table editor issues grants for you, so a project built by
+clicking never meets this. A schema applied as raw SQL has to say it, which is
+what the grants migration does: `authenticated` gets table access, `anon` gets
+schema usage alone, and `alter default privileges` covers tables added later.
+
 ## Row Level Security
 
 Every table has `user_id uuid not null default auth.uid()` and one policy:

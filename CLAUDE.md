@@ -130,10 +130,14 @@ running the app.
   file has against how many are recorded and inserts the difference. See
   `docs/budgeting.md`; the test that pins it is the idempotency case in
   `importer.test.ts`.
-- **Row Level Security is the whole access control story.** Every table has
-  `user_id` defaulting to `auth.uid()` and one policy with both `using` and
-  `with check` — without the latter an update could hand a row to another
-  account. No insert in `api.ts` names `user_id`, so no code path can name the
+- **Row Level Security is the whole access control story, but GRANT comes
+  first.** Every table has `user_id` defaulting to `auth.uid()` and one policy
+  with both `using` and `with check` — without the latter an update could hand a
+  row to another account. Policies alone are not enough, though: a role also
+  needs table privileges, and the two fail differently — a missing grant is
+  `permission denied for table ...`, while RLS excluding everything is a
+  silent empty result. A new table needs both, and the grants migration's
+  `alter default privileges` covers the second for anything added later. No insert in `api.ts` names `user_id`, so no code path can name the
   wrong one. The publishable key ships in the bundle by design; a secret key
   must never appear in this repo.
 - **Colour scheme before first paint:** the inline script in `index.html` sets
