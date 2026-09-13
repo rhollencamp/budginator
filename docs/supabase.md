@@ -18,51 +18,45 @@ which are the only way to write across more than one table atomically.
    supabase db push
    ```
 
-3. Under **Authentication → Providers**, leave Email enabled and turn **Allow
-   new users to sign up** off. The ledger is shared, so anyone who can sign in
-   can read everything — see "One shared ledger" below. Add people with
-   **Authentication → Users → Invite**.
-4. Under **Authentication → Email Templates → Magic Link**, make sure the body
-   includes `{{ .Token }}`. **Sign-in does not work without this** — the app
-   asks people for a six-digit code, and by default the template only contains
-   the link. Keeping `{{ .ConfirmationURL }}` alongside it is worth doing: the
-   link is the easier route in a desktop browser. Something like:
-
-   ```html
-   <p>Your Budginator sign-in code is <strong>{{ .Token }}</strong></p>
-   <p>Or <a href="{{ .ConfirmationURL }}">click here</a> to sign in.</p>
-   ```
-
-5. Under **Authentication → URL Configuration**, add the app's URL to the
-   redirect allow-list. Local development needs `http://localhost:5173/` there
-   too, or the sign-in link bounces.
-
-   The URL the app asks to be sent back to is the **directory it is served
-   from**, which `signInRedirectUrl` in `src/data/useSession.ts` derives from
-   the current location — `https://<user>.github.io/budginator/` on Pages,
-   `http://localhost:5173/` in development. Add each one you use. The trailing
-   slash matters.
-
-6. Copy the project URL and the publishable key from **Project Settings → API
+3. Under **Authentication → Providers → Email**, leave the provider enabled,
+   leave **Enable email password** on, and turn **Allow new users to sign up**
+   off. The ledger is shared, so anyone who can sign in can read everything.
+4. Create the accounts under **Authentication → Users → Add user → Create new
+   user**. Set a password there and tick **Auto Confirm User**. This sends no
+   email, which is the point — see "Why a password" below.
+5. Copy the project URL and the publishable key from **Project Settings → API
    Keys** into `.env` (see `.env.example`).
 
-## Why a code and not a link
+There is no redirect allow-list to configure and no email template to edit,
+because the app never sends mail.
+
+## Why a password
+
+Passwordless would have been nicer, and both forms of it are unavailable here.
 
 An installed PWA has its own storage partition, separate from the browser's —
-on iOS emphatically so. A magic link opens in Mail's in-app browser or in
+on iOS emphatically so. A **magic link** opens in Mail's in-app browser or in
 Safari, Supabase exchanges it for a session **there**, and the installed app is
 still signed out, looking at a different store. Nothing can hand the session
 across, and a PWA cannot claim the link either: iOS has no Universal Links for
-web apps, and there is no dependable Android equivalent for a plain PWA.
+web apps.
 
-So the app asks for the code instead. A code is carried by the person, and the
-exchange happens inside whichever context they typed it into — which is the
-installed app. `sendSignInCode` and `verifySignInCode` in
-`src/data/useSession.ts` are the two halves; one `signInWithOtp` call sends both
-code and link, and the template decides what the email shows.
+An **emailed code** solves that, because the person carries the code and the
+exchange happens inside the app. But Supabase only sends a code when the
+project's Magic Link template contains `{{ .Token }}` — the default carries
+only `{{ .ConfirmationURL }}`, which is what makes it a link — and editing
+email templates requires custom SMTP. Without that, a code cannot be sent at
+all.
 
-`shouldCreateUser: false` is passed on the way out, so an address that has not
-been invited receives nothing rather than quietly becoming a new account.
+So: a password, typed into the app, never leaving it. No email is involved in
+signing in, which also means no SMTP setup, no template, and no rate limit on
+the built-in mail service. `autocomplete="username"` and
+`autocomplete="current-password"` are on the two fields so a password manager
+fills both in one tap.
+
+Resetting a password is a dashboard job, under Authentication → Users. An
+in-app reset link would land back in the browser rather than the installed app
+— the same problem as the magic link, one step removed.
 
 ## Which key
 

@@ -4,142 +4,81 @@ import { render, screen, waitFor } from '../test/render'
 
 // The module reaches for the Supabase client at import time, and these tests
 // are about the screen's behaviour rather than the network underneath it.
-vi.mock('../data/useSession', () => ({
-  sendSignInCode: vi.fn(),
-  verifySignInCode: vi.fn(),
-}))
+vi.mock('../data/useSession', () => ({ signInWithPassword: vi.fn() }))
 
-import { sendSignInCode, verifySignInCode } from '../data/useSession'
+import { signInWithPassword } from '../data/useSession'
 import { SignInView } from './SignInView'
 
-const sent = vi.mocked(sendSignInCode)
-const verified = vi.mocked(verifySignInCode)
+const signIn = vi.mocked(signInWithPassword)
 
 beforeEach(() => {
-  sent.mockReset().mockResolvedValue(undefined)
-  verified.mockReset().mockResolvedValue(undefined)
+  signIn.mockReset().mockResolvedValue(undefined)
 })
 
-/** Walks the first step, leaving the screen on code entry. */
-async function reachCodeStep(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText(/email/i), 'me@example.com')
-  await user.click(screen.getByRole('button', { name: /send me a code/i }))
-  await screen.findAllByLabelText('Sign-in code')
-}
-
-/**
- * A PinInput is one input per digit, so a code is typed across six boxes.
- * Focusing the first and using the keyboard lets Mantine advance the focus the
- * way it does for a real person.
- */
-async function typeCode(
-  user: ReturnType<typeof userEvent.setup>,
-  digits: string,
-) {
-  const boxes = screen.getAllByLabelText('Sign-in code')
-  await user.click(boxes[0])
-  await user.keyboard(digits)
-}
-
 describe('SignInView', () => {
-  it('asks for an email first, and will not send an empty one', () => {
-    render(<SignInView />)
-
-    expect(
-      screen.getByRole('button', { name: /send me a code/i }),
-    ).toBeDisabled()
-  })
-
-  it('sends a code to the address given', async () => {
+  it('will not submit until both fields are filled', async () => {
     const user = userEvent.setup()
     render(<SignInView />)
 
-    await reachCodeStep(user)
+    const button = screen.getByRole('button', { name: /sign in/i })
+    expect(button).toBeDisabled()
 
-    expect(sent).toHaveBeenCalledWith('me@example.com')
+    await user.type(screen.getByLabelText(/^email/i), 'me@example.com')
+    expect(button).toBeDisabled()
+
+    await user.type(screen.getByLabelText(/^password/i), 'hunter2')
+    expect(button).toBeEnabled()
   })
 
-  it('moves to code entry and names the address it used', async () => {
+  it('signs in with the credentials given, trimming the email', async () => {
     const user = userEvent.setup()
     render(<SignInView />)
-    await reachCodeStep(user)
 
-    expect(screen.getByText(/me@example.com/)).toBeInTheDocument()
-  })
-
-  it('stays on the email step when sending fails', async () => {
-    const user = userEvent.setup()
-    sent.mockRejectedValue(new Error('Signups not allowed for otp'))
-    render(<SignInView />)
-
-    await user.type(screen.getByLabelText(/email/i), 'nobody@example.com')
-    await user.click(screen.getByRole('button', { name: /send me a code/i }))
-
-    expect(
-      await screen.findByText(/signups not allowed for otp/i),
-    ).toBeInTheDocument()
-    expect(screen.queryAllByLabelText('Sign-in code')).toHaveLength(0)
-  })
-
-  it('verifies the code once the last digit is typed', async () => {
-    const user = userEvent.setup()
-    render(<SignInView />)
-    await reachCodeStep(user)
-
-    await typeCode(user, '123456')
+    await user.type(screen.getByLabelText(/^email/i), '  me@example.com  ')
+    await user.type(screen.getByLabelText(/^password/i), 'hunter2')
+    await user.click(screen.getByRole('button', { name: /sign in/i }))
 
     await waitFor(() =>
-      expect(verified).toHaveBeenCalledWith('me@example.com', '123456'),
+      expect(signIn).toHaveBeenCalledWith('me@example.com', 'hunter2'),
     )
   })
 
-  it('redeems a code exactly once, not twice', async () => {
+  it('reports a rejected sign-in and clears only the password', async () => {
     const user = userEvent.setup()
+    signIn.mockRejectedValue(new Error('Invalid login credentials'))
     render(<SignInView />)
-    await reachCodeStep(user)
 
-    // Typing the sixth digit submits; the button must not resubmit the same
-    // code, since a code is single-use and the second attempt would fail.
-    await typeCode(user, '123456')
-    await waitFor(() => expect(verified).toHaveBeenCalledTimes(1))
-    expect(verified).toHaveBeenCalledTimes(1)
-  })
-
-  it('reports a bad code and clears the field to retry', async () => {
-    const user = userEvent.setup()
-    verified.mockRejectedValue(new Error('Token has expired or is invalid'))
-    render(<SignInView />)
-    await reachCodeStep(user)
-
-    await typeCode(user, '000000')
+    await user.type(screen.getByLabelText(/^email/i), 'me@example.com')
+    await user.type(screen.getByLabelText(/^password/i), 'wrong')
+    await user.click(screen.getByRole('button', { name: /sign in/i }))
 
     expect(
-      await screen.findByText(/token has expired or is invalid/i),
+      await screen.findByText(/invalid login credentials/i),
     ).toBeInTheDocument()
-    // Still on the code step, ready for another try.
-    expect(screen.getAllByLabelText('Sign-in code')).toHaveLength(6)
+    // The email survives so a retry is one field, not two.
+    expect(screen.getByLabelText(/^email/i)).toHaveValue('me@example.com')
+    expect(screen.getByLabelText(/^password/i)).toHaveValue('')
   })
 
-  it('can go back and use a different email', async () => {
-    const user = userEvent.setup()
+  it('carries the autocomplete hints a password manager needs', () => {
     render(<SignInView />)
-    await reachCodeStep(user)
 
-    await user.click(screen.getByRole('button', { name: /different email/i }))
+    expect(screen.getByLabelText(/^email/i)).toHaveAttribute(
+      'autocomplete',
+      'username',
+    )
+    expect(screen.getByLabelText(/^password/i)).toHaveAttribute(
+      'autocomplete',
+      'current-password',
+    )
+  })
 
+  it('offers no way to create an account', () => {
+    render(<SignInView />)
+
+    expect(screen.queryByText(/sign up/i)).not.toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: /send me a code/i }),
+      screen.getByText(/accounts are created in supabase/i),
     ).toBeInTheDocument()
-  })
-
-  it('resends to the same address', async () => {
-    const user = userEvent.setup()
-    render(<SignInView />)
-    await reachCodeStep(user)
-
-    await user.click(screen.getByRole('button', { name: /resend/i }))
-
-    await waitFor(() => expect(sent).toHaveBeenCalledTimes(2))
-    expect(sent).toHaveBeenLastCalledWith('me@example.com')
   })
 })

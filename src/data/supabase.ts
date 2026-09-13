@@ -30,8 +30,9 @@ export const supabase = createClient(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      // The magic link comes back with its code in the URL; the client trades it
-      // for a session and then the app strips the query (see `useSession`).
+      // Signing in with a password puts nothing in the URL, but a password
+      // recovery link sent from the dashboard does; this trades its code for a
+      // session, and the app then strips the query (see `useSession`).
       detectSessionInUrl: true,
       flowType: 'pkce',
     },
