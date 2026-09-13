@@ -1,9 +1,13 @@
 # Supabase
 
 The app talks to Supabase directly from the browser. There is no server tier,
-so two things carry the weight that a backend usually would: **Row Level
-Security**, which is the entire access control story, and the **RPC functions**,
-which are the only way to write across more than one table atomically.
+so the database carries weight a backend usually would: **GRANT and Row Level
+Security** are what a request is checked against, and the **RPC functions** are
+the only way to write across more than one table atomically.
+
+Read "One shared ledger" before assuming the policies separate people. They do
+not — every signed-in user sees the same data, and who can sign in at all is
+the boundary that matters.
 
 ## Setting up a project
 
@@ -69,8 +73,9 @@ repository.
 | **Secret**      | `sb_secret_...`      | Nowhere in this repo            |
 
 The publishable key is meant to ship in the bundle. It identifies the project
-and grants nothing by itself; the policies below are what stop one account
-reading another's ledger.
+and grants nothing by itself: it buys you the `anon` role, which holds no table
+privileges at all. Reaching the data needs a session, and a session needs an
+account someone created in the dashboard.
 
 A **secret key bypasses RLS entirely**. Everything this app is configured with
 is compiled into a public JavaScript file, so a secret key set here would hand
@@ -108,8 +113,9 @@ migrations itself when they land on the production branch, which is Supabase
 Branching (Project Settings → Integrations → GitHub). It also spins up an
 ephemeral preview database per pull request, seeded from the migrations on that
 branch, so a schema change can be reviewed against a real database rather than
-read. It needs `supabase/config.toml` committed — `supabase init` writes it —
-and Branching is a paid-plan feature, so check that before wiring it up.
+read. It needs `supabase/config.toml` committed, **which this repo does not
+have** — run `supabase init` to generate one and commit it — and Branching is a
+paid-plan feature, so check that before wiring it up.
 
 Whichever you choose, choose one. Applying a migration by hand in the SQL editor
 _and_ having something else apply it leaves the two disagreeing about what has
@@ -150,8 +156,9 @@ to sign in saw an empty app while budgeting against the same bank accounts.
 The shared-ledger migration drops the column and rewrites the policies.
 
 **What keeps the ledger private is therefore who can sign in at all.** Public
-sign-up is turned off for the project, and users are added by invitation. That
-is a project setting rather than a database constraint, which is the tradeoff
+sign-up is turned off for the project, and accounts are created by hand in the
+dashboard (setup step 4). That is a project setting rather than a database
+constraint, which is the tradeoff
 worth understanding: re-enable sign-up and anyone who registers can read
 everything. If that ever becomes a risk — sharing the URL more widely, say —
 the stricter form is a policy gated on an allowlist:
@@ -186,9 +193,9 @@ So anything spanning tables is a function in the functions migration:
 - `link_imported_to_transaction` — attaches a bank row to a transaction entered
   by hand, failing if either side is already linked.
 
-They are `security invoker`, so RLS still applies with the caller's own uid. A
-function here is a way to do several things at once _under_ the policies, never
-a way around them. Each pins `search_path` so a caller cannot shadow `public`
+They are `security invoker`, so they run with the caller's own privileges and
+both gates still apply inside them. A function here is a way to do several
+things at once _under_ the policies, never a way around them. Each pins `search_path` so a caller cannot shadow `public`
 and change which tables the body means.
 
 ## Schema notes
