@@ -1,11 +1,22 @@
 /**
  * Who is signed in.
  *
- * Auth is Supabase's email magic link: the user asks for a link, follows it,
- * and the client trades the code in the URL for a session it then keeps in
- * localStorage. `onAuthStateChange` fires for the initial read as well as for
- * every later sign-in, sign-out and token refresh, so it is the only
- * subscription needed — there is no separate `getSession` call to race with it.
+ * Sign-in is a six-digit code emailed to the user and typed into the app —
+ * not a link, and that is the whole point. An installed PWA has its own
+ * storage partition, separate from the browser's: on iOS emphatically so. A
+ * magic link opens in Mail's in-app browser or Safari, Supabase exchanges it
+ * for a session *there*, and the installed app is still signed out, looking at
+ * a different store. Nothing can hand the session across, and a PWA cannot
+ * claim the link either — iOS has no Universal Links for web apps.
+ *
+ * A code has no such problem: it is carried by the person, and the exchange
+ * happens inside whichever context they typed it into. The same email still
+ * carries a link for anyone signing in from a desktop browser, where following
+ * it works fine.
+ *
+ * `onAuthStateChange` fires for the initial read as well as for every later
+ * sign-in, sign-out and token refresh, so it is the only subscription needed —
+ * there is no separate `getSession` call to race with it.
  */
 import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
@@ -59,15 +70,47 @@ export function signInRedirectUrl(href: string): string {
   return new URL('.', href).href
 }
 
-/** Sends a sign-in link to the address given. */
-export async function sendMagicLink(email: string): Promise<void> {
+/**
+ * Emails a sign-in code to the address given.
+ *
+ * One call sends both the code and the link — which of them the email shows is
+ * decided by the project's email template, and this app's includes both (see
+ * `docs/supabase.md`). `shouldCreateUser: false` means an address that has not
+ * been invited gets nothing rather than becoming a new account: public sign-up
+ * is off for this project, and the ledger is shared, so anyone who could sign
+ * in could read everything.
+ */
+export async function sendSignInCode(email: string): Promise<void> {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      // Whatever this resolves to must also be in the Supabase project's
-      // redirect allow-list, or the link bounces. See `docs/supabase.md`.
+      shouldCreateUser: false,
+      // Only used by the link half of the email. Whatever this resolves to
+      // must also be in the project's redirect allow-list, or the link
+      // bounces. See `docs/supabase.md`.
       emailRedirectTo: signInRedirectUrl(window.location.href),
     },
+  })
+
+  if (error) throw new Error(error.message)
+}
+
+/**
+ * Exchanges a code for a session. On success `onAuthStateChange` fires and the
+ * app re-renders signed in, so there is nothing to return.
+ *
+ * A code is single-use and short-lived, so the common failures here are a
+ * typo, an expired code, and one already spent by following the link in the
+ * same email from somewhere else.
+ */
+export async function verifySignInCode(
+  email: string,
+  code: string,
+): Promise<void> {
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token: code,
+    type: 'email',
   })
 
   if (error) throw new Error(error.message)
