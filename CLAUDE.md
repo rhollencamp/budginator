@@ -27,13 +27,17 @@ Run a single test file with `npx vitest run src/budget/money.test.ts`, or
 ## Stack
 
 - React 19 + TypeScript, built with Vite.
-- Mantine is the UI and theming layer. `src/theme.ts` holds the theme (palette,
-  dark ramp, typography, component defaults); `src/styles/app.css` holds the
-  little that a theme object can't express. Mantine styles are plain CSS with
+- Mantine is the UI and theming layer. `src/theme.ts` holds the theme: the
+  `ledger` and `overdrawn` palettes, typography, and component defaults —
+  including `size: 'md'` on every input, which is 16px and therefore the size
+  below which iOS zooms the page on focus. The dark scheme is Mantine's own
+  ramp, not a custom one; `src/styles/app.css` holds the little a theme object
+  can't express, which is the light page background, two header tokens, the
+  safe-area padding and the tabular-figures rule for money. Mantine styles are plain CSS with
   custom properties — no CSS-in-JS runtime, and no Sass in this repo.
 - Supabase is the backing store, talked to directly from the browser. There is
-  no server tier: Row Level Security is the access control, and anything that
-  writes across tables is a Postgres function.
+  no server tier: GRANT and Row Level Security are what a request is checked
+  against, and anything that writes across tables is a Postgres function.
 - `vite-plugin-pwa` provides the web app manifest and generates the service
   worker.
 - Linting is `oxlint`, configured via `.oxlintrc.json` — there is no ESLint
@@ -77,9 +81,10 @@ knows they are backed by a network.
 
 Tests live alongside the code they cover — Vitest with a jsdom environment
 (`vitest.config.ts`). `src/budget/*.test.ts` covers the domain and is where most
-of the coverage is; `src/ui/*.test.tsx` covers the two screens with real logic
-in them, the dashboard's figures and the split editor's balancing, rendered
-through `src/test/render.tsx` so they exercise the real theme. `App.tsx`, the
+of the coverage is; `src/ui/*.test.tsx` covers the four screens with real logic
+in them — the dashboard's figures, the split editor's balancing, Setup's rule
+editing and imported-row corrections, and sign-in — rendered through
+`src/test/render.tsx` so they exercise the real theme. `App.tsx`, the
 data layer and the service-worker wiring aren't unit tested; verify those by
 running the app.
 
@@ -148,9 +153,9 @@ running the app.
   nobody. `docs/supabase.md` has the allowlist form to tighten to if the
   sign-in boundary ever stops being enough.
 - **GRANT comes before RLS.** A role needs table privileges as well as a
-  policy, and the two fail differently — a missing grant is `permission denied
-for table ...`, while RLS excluding everything is a silent empty result. A
-  new table needs both; the grants migration's `alter default privileges`
+  policy, and the two fail differently — a missing grant raises
+  `permission denied`, while RLS excluding everything is a silent empty
+  result. A new table needs both; the grants migration's `alter default privileges`
   covers the second for anything added later. The publishable key ships in the
   bundle by design; a secret key must never appear in this repo.
 - **Colour scheme before first paint:** the inline script in `index.html` sets
@@ -181,3 +186,5 @@ for table ...`, while RLS excluding everything is a silent empty result. A
 - `docs/budgeting.md` — envelopes, splits, and the import pipeline.
 - `docs/supabase.md` — project setup, RLS, and why some writes are RPCs.
 - `docs/pwa.md` — the service worker, the update flow, and what is not cached.
+- `docs/deployment.md` — the Pages pipeline, its repository variables, and the
+  guard that stops a secret key reaching the bundle.

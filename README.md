@@ -26,8 +26,8 @@ cp .env.example .env   # then fill in from your Supabase project
 npm run dev
 ```
 
-Setting up the Supabase side — running the migrations, the auth redirect URLs,
-what the publishable key is and is not — is in
+Setting up the Supabase side — running the migrations, creating the accounts
+that can sign in, what the publishable key is and is not — is in
 [`docs/supabase.md`](docs/supabase.md).
 
 ## Commands
@@ -51,3 +51,5 @@ npm run icons        # re-render public/*.png from public/favicon.svg
   and why some writes are RPC functions.
 - [`docs/pwa.md`](docs/pwa.md) — service worker, the update flow, and what is
   deliberately not cached.
+- [`docs/deployment.md`](docs/deployment.md) — the GitHub Pages pipeline, the
+  repository variables it needs, and why the base path is relative.
