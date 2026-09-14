@@ -162,12 +162,13 @@ export function LinkView({
             <TextInput
               placeholder="Note (optional)"
               value={notes[row.id] ?? ''}
-              onChange={(event) =>
-                setNotes((current) => ({
-                  ...current,
-                  [row.id]: event.currentTarget.value,
-                }))
-              }
+              onChange={(event) => {
+                // Read the value out of the event before the updater: React
+                // clears `currentTarget` once the handler returns, and a
+                // functional updater does not necessarily run before then.
+                const note = event.currentTarget.value
+                setNotes((current) => ({ ...current, [row.id]: note }))
+              }}
             />
 
             <Group gap="xs">
