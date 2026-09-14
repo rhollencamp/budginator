@@ -26,12 +26,17 @@ that reliably happens, since an installed PWA is rarely "reloaded" at all.
 The service worker precaches the **app shell**: the JS, CSS, HTML and icons. So
 the app opens instantly, opens offline, and opens on a flaky connection.
 
-It caches **no data**. Every ledger read goes to Supabase on launch. This is the
-one place the app trades convenience for correctness: a cached balance is a
-balance that can be wrong without saying so, and "can I afford this" answered
-from a stale envelope is worse than not answered at all. Offline, the app opens
-and tells you it could not load rather than showing you figures it is not sure
-about.
+It caches **no data**. Every ledger read goes to Supabase: at launch, and again
+when the app is returned to the foreground and what is on screen has had time to
+go stale (`STALE_AFTER_MS` in `src/data/useLedger.ts`, five minutes). An
+installed PWA survives for days without a reload, and the ledger is shared, so
+"still open from yesterday" is the normal case rather than the odd one.
+
+This is the one place the app trades convenience for correctness: a cached
+balance is a balance that can be wrong without saying so, and "can I afford
+this" answered from a stale envelope is worse than not answered at all. Offline,
+the app opens and tells you it could not load rather than showing you figures it
+is not sure about.
 
 If offline entry is ever wanted, the shape is an outbox — queue writes locally,
 replay on reconnect, and show unsynced entries as pending — not a read cache.

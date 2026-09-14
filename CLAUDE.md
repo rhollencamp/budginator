@@ -32,9 +32,10 @@ Run a single test file with `npx vitest run src/budget/money.test.ts`, or
   including `size: 'md'` on every input, which is 16px and therefore the size
   below which iOS zooms the page on focus. The dark scheme is Mantine's own
   ramp, not a custom one; `src/styles/app.css` holds the little a theme object
-  can't express, which is the light page background, two header tokens, the
-  safe-area padding and the tabular-figures rule for money. Mantine styles are plain CSS with
-  custom properties — no CSS-in-JS runtime, and no Sass in this repo.
+  can't express — the light page background, two header tokens, the safe-area
+  padding, the sticky action bar a batch screen commits from, and the
+  tabular-figures rule for money. Mantine styles are plain CSS with custom
+  properties — no CSS-in-JS runtime, and no Sass in this repo.
 - Supabase is the backing store, talked to directly from the browser. There is
   no server tier: GRANT and Row Level Security are what a request is checked
   against, and anything that writes across tables is a Postgres function.
@@ -81,10 +82,10 @@ knows they are backed by a network.
 
 Tests live alongside the code they cover — Vitest with a jsdom environment
 (`vitest.config.ts`). `src/budget/*.test.ts` covers the domain and is where most
-of the coverage is; `src/ui/*.test.tsx` covers the four screens with real logic
+of the coverage is; `src/ui/*.test.tsx` covers the five screens with real logic
 in them — the dashboard's figures, the split editor's balancing, Setup's rule
-editing and imported-row corrections, and sign-in — rendered through
-`src/test/render.tsx` so they exercise the real theme. `App.tsx`, the
+editing and imported-row corrections, the link queue's batching, and sign-in —
+rendered through `src/test/render.tsx` so they exercise the real theme. `App.tsx`, the
 data layer and the service-worker wiring aren't unit tested — a fake of
 PostgREST proves nothing — and are verified by running the app. The exception
 are `api.test.ts`, which covers the read retry policy, and `useLedger.test.ts`,
