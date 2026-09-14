@@ -26,6 +26,12 @@ export interface LedgerState {
   ledger: Ledger
   /** True until the first load finishes; a later refresh keeps data on screen. */
   loading: boolean
+  /**
+   * True once a load has actually succeeded. Until it has there is no ledger,
+   * only a blank one, and a screen drawn from it would report an empty
+   * household rather than a failed read.
+   */
+  loadedOnce: boolean
   /** True while a reload is in flight, for a quiet progress indicator. */
   refreshing: boolean
   error: string | null
@@ -41,6 +47,7 @@ export interface LedgerState {
 export function useLedger(enabled: boolean): LedgerState {
   const [ledger, setLedger] = useState<Ledger>(EMPTY)
   const [loaded, setLoaded] = useState(false)
+  const [loadedOnce, setLoadedOnce] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -54,6 +61,7 @@ export function useLedger(enabled: boolean): LedgerState {
     setLastEnabled(enabled)
     setLedger(EMPTY)
     setLoaded(false)
+    setLoadedOnce(false)
     setError(null)
   }
 
@@ -64,6 +72,7 @@ export function useLedger(enabled: boolean): LedgerState {
     try {
       setLedger(await fetchLedger())
       setError(null)
+      setLoadedOnce(true)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught))
     } finally {
@@ -100,6 +109,7 @@ export function useLedger(enabled: boolean): LedgerState {
   return {
     ledger,
     loading: enabled && !loaded,
+    loadedOnce,
     refreshing,
     error,
     reload,

@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import {
   Alert,
+  Button,
   Center,
   Container,
   Loader,
   MantineProvider,
+  Stack,
+  Text,
 } from '@mantine/core'
 import { theme } from './theme'
 import { isSupabaseConfigured } from './data/supabase'
@@ -40,7 +43,8 @@ export default function App() {
 function Shell() {
   const { session, loading: authLoading } = useSession()
   const signedIn = session !== null
-  const { ledger, loading, refreshing, error, run } = useLedger(signedIn)
+  const { ledger, loading, loadedOnce, refreshing, error, reload, run } =
+    useLedger(signedIn)
 
   const [screen, setScreen] = useState<Screen>(HOME)
   const [menuOpened, setMenuOpened] = useState(false)
@@ -116,15 +120,31 @@ function Shell() {
       <Container component="main" size="sm" py="lg" flex={1} w="100%">
         {error && (
           <Alert color="red" title="Could not load" variant="light" mb="md">
-            {error}
+            <Stack align="flex-start" gap="sm">
+              <Text size="sm">{error}</Text>
+              <Button
+                variant="light"
+                color="red"
+                loading={refreshing}
+                onClick={() => void reload()}
+              >
+                Try again
+              </Button>
+            </Stack>
           </Alert>
         )}
 
+        {/*
+          A failed first read leaves an empty ledger behind, and drawing a
+          screen from it would say "no budgets yet" to somebody who has plenty
+          — the error above and a contradiction below it. Until one read has
+          landed, the error is the whole screen.
+        */}
         {loading ? (
           <Center py="xl">
             <Loader />
           </Center>
-        ) : (
+        ) : !loadedOnce ? null : (
           <Screens
             screen={screen}
             go={go}

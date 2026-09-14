@@ -87,10 +87,10 @@ like a secret key.
 
 Older projects call these the **anon** and **service_role** keys, and a project
 that predates the change shows both namings. They are equivalent for this app's
-purposes: anon ↔ publishable, service_role ↔ secret. The publishable key is a
+purposes: anon ↔ publishable, service*role ↔ secret. The publishable key is a
 drop-in for the anon key in `createClient`, which is why the rename needed no
 code change beyond the variable's name. If your dashboard offers both, prefer
-the `sb_publishable_...` one — the JWT-shaped legacy keys are on their way out.
+the `sb_publishable*...` one — the JWT-shaped legacy keys are on their way out.
 
 ## Running migrations
 
@@ -171,6 +171,31 @@ RLS stays enabled and every table keeps a policy even though the policy admits
 all authenticated users. `anon` is refused twice over, holding neither a grant
 nor a policy, and a table with RLS enabled and no policy denies everyone — a
 confusing way to discover a missing grant later.
+
+## "JWT issued at future" on a cold start
+
+An access token carries an `iat` stamped by the auth server, and PostgREST
+checks it against its own clock. Those are two machines, so a token minted a
+moment ago can arrive at a PostgREST whose clock is a fraction behind and be
+turned away as issued in the future — `Could not load budgets: JWT issued at
+future`, which is what the app used to put on screen.
+
+It shows up on a cold start because that is the one moment the token is new
+enough for a second of skew to matter: the app restores the session, the client
+refreshes the token, and the whole ledger is read in the same breath. Nothing
+about the request is wrong, and the same token works a moment later.
+
+So `fetchLedger` retries it — four attempts over about three seconds, in
+`retryTransient` in `src/data/api.ts`. Reads only. `fetchLedger` asks for whole
+tables and holds nothing, so repeating it costs a round trip; a write is not
+repeatable the same way, because a retried save whose first attempt actually
+landed is a duplicate transaction. Writes surface the error and let the person
+press the button again.
+
+If it outlives the retries the app says so and offers "Try again", and it draws
+no screen behind that message: a failed first read leaves an empty ledger
+behind, and a dashboard drawn from it would report "no budgets yet" to somebody
+who has plenty.
 
 ## Why there are RPC functions
 
