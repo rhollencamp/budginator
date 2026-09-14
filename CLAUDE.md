@@ -87,8 +87,10 @@ editing and imported-row corrections, and sign-in — rendered through
 `src/test/render.tsx` so they exercise the real theme. `App.tsx`, the
 data layer and the service-worker wiring aren't unit tested — a fake of
 PostgREST proves nothing — and are verified by running the app. The exception
-is `api.test.ts`, which covers the read retry policy: that one decides for
-itself whether to repeat a request, and nothing about it needs a server.
+are `api.test.ts`, which covers the read retry policy, and `useLedger.test.ts`,
+which covers the staleness window and which of two reads in flight wins: both
+decide for themselves whether to repeat a request, and nothing about either
+needs a server.
 
 ## Gotchas
 
@@ -128,6 +130,11 @@ itself whether to repeat a request, and nothing about it needs a server.
   right and then quietly wrong, which is this app's worst failure mode. If the
   row count ever does become a problem, fix it in `api.ts` with a date-bounded
   read and a stored opening balance — not by scattering queries through views.
+  Returning to the foreground re-reads too, on `visibilitychange` and only once
+  the ledger is older than `STALE_AFTER_MS` (five minutes) — an installed PWA
+  survives for days, and the ledger is shared. Two reads can be in flight at
+  once, so `useLedger` numbers each one and lets only the newest write to
+  state: last request issued wins, whatever order PostgREST answers in.
 - **A cold start can be told its token is from the future.** `iat` is stamped
   by the auth server and checked by PostgREST against its own clock, so a
   just-minted token can lose a race with a fraction of a second of skew —
