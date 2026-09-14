@@ -70,3 +70,24 @@
 .table-scroll {
   overflow-x: auto;
 }
+
+/* The button that commits a batch, kept in reach of a long list.
+   `sticky` rather than `fixed`, because sticky keeps the bar in the flow: at
+   the end of the list it sits after the last card like an ordinary button, and
+   only lifts over the page while there is still list below it. A fixed bar
+   would cover the last card permanently and need a spacer to compensate — and
+   it is fixed bars that jump around when the iOS keyboard opens over a field.
+   The inset padding follows the header's rule: pad the bar, not its contents,
+   so the background still runs full-bleed into the home-indicator gutter while
+   the button itself stays clear of it and out of the swipe-up zone. */
+.sticky-actions {
+  position: sticky;
+  bottom: 0;
+  /* Under the header's 100: a bar that scrolled over the title would look
+     like a second header. */
+  z-index: 50;
+  padding-top: var(--mantine-spacing-sm);
+  padding-bottom: max(var(--mantine-spacing-sm), env(safe-area-inset-bottom));
+  background-color: var(--mantine-color-body);
+  border-top: 1px solid var(--mantine-color-default-border);
+}

@@ -278,15 +278,12 @@ function Screens({ screen, go, ledger, run, email }: ScreensProps) {
           imported={ledger.imported}
           transactions={ledger.transactions}
           budgets={ledger.budgets}
-          onLinkToBudget={(importedId, budgetId, note) =>
-            run(() =>
-              api.linkImportedToBudgets([{ importedId, budgetId, note }]),
-            )
+          onLinkToBudgets={(links) =>
+            run(() => api.linkImportedToBudgets(links))
           }
           onLinkToTransaction={(importedId, transactionId) =>
             run(() => api.linkImportedToTransaction(importedId, transactionId))
           }
-          onDiscard={(importedId) => run(() => api.deleteImported(importedId))}
         />
       )
 
