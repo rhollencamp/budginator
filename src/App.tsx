@@ -17,7 +17,6 @@ import { downloadLedger } from './data/backup'
 import * as api from './data/api'
 import { AppHeader } from './ui/AppHeader'
 import { NavDrawer } from './ui/NavDrawer'
-import { AboutView } from './ui/AboutView'
 import { AutoLinkView } from './ui/AutoLinkView'
 import { DashboardView } from './ui/DashboardView'
 import { EditTransactionView } from './ui/EditTransactionView'
@@ -322,8 +321,5 @@ function Screens({ screen, go, ledger, run, email }: ScreensProps) {
       return (
         <SettingsView email={email} onExport={() => downloadLedger(ledger)} />
       )
-
-    case 'about':
-      return <AboutView />
   }
 }

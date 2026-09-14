@@ -23,7 +23,6 @@ export const VIEWS = [
   { key: 'autoLink', label: 'Auto Link', title: 'Auto Link' },
   { key: 'setup', label: 'Setup', title: 'Setup' },
   { key: 'settings', label: 'Settings', title: 'Settings' },
-  { key: 'about', label: 'About', title: 'About' },
 ] as const
 
 export type View = (typeof VIEWS)[number]['key']
@@ -42,7 +41,6 @@ export type Screen =
   | { view: 'autoLink' }
   | { view: 'setup' }
   | { view: 'settings' }
-  | { view: 'about' }
 
 export const HOME: Screen = { view: 'dashboard' }
 
