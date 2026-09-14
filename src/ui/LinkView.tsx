@@ -18,16 +18,13 @@ interface LinkViewProps {
   imported: readonly ImportedTransaction[]
   transactions: readonly Transaction[]
   budgets: readonly Budget[]
-  onLinkToBudget: (
-    importedId: string,
-    budgetId: string,
-    note: string,
+  onLinkToBudgets: (
+    links: { importedId: string; budgetId: string; note: string }[],
   ) => Promise<string | null>
   onLinkToTransaction: (
     importedId: string,
     transactionId: string,
   ) => Promise<string | null>
-  onDiscard: (importedId: string) => Promise<string | null>
 }
 
 /**
@@ -38,17 +35,27 @@ interface LinkViewProps {
  * already entered by hand — the suggestions at the top, matched on amount and a
  * nearby date — in which case linking the two records one event rather than
  * two. Or it is new, and picking a budget turns it into a transaction.
+ *
+ * Budgeting is a batch: pick a budget against as many rows as you like and
+ * press the one button at the bottom. Each row used to save on its own, which
+ * meant a whole-ledger reload per row — and the list shifting under a thumb
+ * between taps, with Discard sitting where the next row's budget had been.
+ * One press means one write, one reload, and one moment where the queue
+ * changes shape. It is also why there is no per-row Discard here any more:
+ * deleting a bank row is a correction, it belongs on Setup's imported rows
+ * beside the other corrections, and it has no place on a screen whose rows
+ * are meant to be tapped through quickly.
  */
 export function LinkView({
   imported,
   transactions,
   budgets,
-  onLinkToBudget,
+  onLinkToBudgets,
   onLinkToTransaction,
-  onDiscard,
 }: LinkViewProps) {
   const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
   const [budgetChoice, setBudgetChoice] = useState<
     Record<string, string | null>
   >({})
@@ -60,11 +67,44 @@ export function LinkView({
     unlinkedTransactions(transactions, imported),
   )
 
-  const act = async (id: string, action: () => Promise<string | null>) => {
-    setBusyId(id)
-    const failure = await action()
+  // Only rows still in the queue count: a choice made against a row that
+  // another session has since budgeted would otherwise be submitted for a row
+  // that is no longer here. The database skips linked rows anyway, but the
+  // count on the button should say what will actually happen.
+  const chosen = unlinked.flatMap((row) => {
+    const budgetId = budgetChoice[row.id]
+    if (!budgetId) return []
+    return [{ importedId: row.id, budgetId, note: notes[row.id] ?? '' }]
+  })
+
+  const acceptSuggestion = async (
+    importedId: string,
+    transactionId: string,
+  ) => {
+    setBusyId(importedId)
+    const failure = await onLinkToTransaction(importedId, transactionId)
     setBusyId(null)
     setError(failure)
+  }
+
+  const save = async () => {
+    setSaving(true)
+    const failure = await onLinkToBudgets(chosen)
+    setSaving(false)
+    setError(failure)
+
+    // Clear what went in, so a row that the write skipped keeps its choice and
+    // everything else starts clean. Nothing here is keyed by anything but the
+    // row id, so a reload that removes the row removes its entry's meaning.
+    if (failure === null) {
+      const saved = new Set(chosen.map((link) => link.importedId))
+      const without = <T,>(current: Record<string, T>) =>
+        Object.fromEntries(
+          Object.entries(current).filter(([id]) => !saved.has(id)),
+        )
+      setBudgetChoice(without)
+      setNotes(without)
+    }
   }
 
   if (unlinked.length === 0) {
@@ -74,6 +114,8 @@ export function LinkView({
       </Alert>
     )
   }
+
+  const busy = saving || busyId !== null
 
   return (
     <Stack gap="md">
@@ -112,15 +154,20 @@ export function LinkView({
                       ? 'same day'
                       : `${suggestion.daysApart} day${suggestion.daysApart === 1 ? '' : 's'} apart`}
                   </Badge>
+                  {/* One at a time, unlike budgeting below: accepting a
+                      suggestion is a judgement about one specific pair, and
+                      the remaining suggestions are recomputed from what the
+                      link changed. Every other button is held while one is in
+                      flight, so the list cannot re-order under a thumb
+                      mid-tap. */}
                   <Button
                     size="compact-sm"
+                    disabled={busy && busyId !== suggestion.imported.id}
                     loading={busyId === suggestion.imported.id}
                     onClick={() =>
-                      act(suggestion.imported.id, () =>
-                        onLinkToTransaction(
-                          suggestion.imported.id,
-                          suggestion.transaction.id,
-                        ),
+                      void acceptSuggestion(
+                        suggestion.imported.id,
+                        suggestion.transaction.id,
                       )
                     }
                   >
@@ -154,6 +201,7 @@ export function LinkView({
               budgets={budgets}
               label={undefined}
               value={budgetChoice[row.id] ?? null}
+              disabled={busy}
               onChange={(value) =>
                 setBudgetChoice((current) => ({ ...current, [row.id]: value }))
               }
@@ -162,6 +210,7 @@ export function LinkView({
             <TextInput
               placeholder="Note (optional)"
               value={notes[row.id] ?? ''}
+              disabled={busy}
               onChange={(event) => {
                 // Read the value out of the event before the updater: React
                 // clears `currentTarget` once the handler returns, and a
@@ -170,42 +219,18 @@ export function LinkView({
                 setNotes((current) => ({ ...current, [row.id]: note }))
               }}
             />
-
-            <Group gap="xs">
-              <Button
-                size="compact-sm"
-                disabled={!budgetChoice[row.id]}
-                loading={busyId === row.id}
-                onClick={() =>
-                  act(row.id, () =>
-                    onLinkToBudget(
-                      row.id,
-                      budgetChoice[row.id] as string,
-                      notes[row.id] ?? '',
-                    ),
-                  )
-                }
-              >
-                Budget it
-              </Button>
-
-              {/* For a row that should never have been imported — a transfer
-                  between your own accounts, a duplicate the bank posted twice.
-                  It deletes the bank row, not a transaction, so nothing that
-                  has been budgeted can be lost this way. */}
-              <Button
-                size="compact-sm"
-                variant="subtle"
-                color="red"
-                loading={busyId === row.id}
-                onClick={() => act(row.id, () => onDiscard(row.id))}
-              >
-                Discard
-              </Button>
-            </Group>
           </Stack>
         </Card>
       ))}
+
+      <Button
+        onClick={() => void save()}
+        disabled={chosen.length === 0 || busy}
+        loading={saving}
+      >
+        Budget {chosen.length}{' '}
+        {chosen.length === 1 ? 'transaction' : 'transactions'}
+      </Button>
     </Stack>
   )
 }

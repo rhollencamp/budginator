@@ -51,7 +51,11 @@ Imported rows land in an unlinked queue. A row leaves it in one of three ways:
   nearest-pair-first so a run of identical subscriptions does not all point at
   the same charge.
 - **Budgeted directly** — it was not entered by hand, so picking a budget turns
-  it into a transaction.
+  it into a transaction. Choices are collected and applied together: pick
+  budgets against as many waiting rows as you like, and one button commits them
+  in a single call, so the queue changes shape once rather than under each tap.
+  Deleting a bank row outright is not offered here — that is a correction, and
+  it lives on Setup → Imported with the others.
 - **Auto-linked** — a merchant rule proposes a budget, and a page of them is
   confirmed at once.
 
