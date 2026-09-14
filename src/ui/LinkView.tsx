@@ -223,14 +223,21 @@ export function LinkView({
         </Card>
       ))}
 
-      <Button
-        onClick={() => void save()}
-        disabled={chosen.length === 0 || busy}
-        loading={saving}
-      >
-        Budget {chosen.length}{' '}
-        {chosen.length === 1 ? 'transaction' : 'transactions'}
-      </Button>
+      {/* Sticky, so a queue eighty rows long does not have to be scrolled to
+          the end to commit it. It doubles as the running count: the label is
+          the only feedback that picking a budget several screens up was
+          registered. */}
+      <div className="sticky-actions">
+        <Button
+          onClick={() => void save()}
+          disabled={chosen.length === 0 || busy}
+          loading={saving}
+          fullWidth
+        >
+          Budget {chosen.length}{' '}
+          {chosen.length === 1 ? 'transaction' : 'transactions'}
+        </Button>
+      </div>
     </Stack>
   )
 }
