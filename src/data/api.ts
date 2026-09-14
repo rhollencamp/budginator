@@ -83,7 +83,59 @@ export interface Ledger {
   expressions: AutoLinkExpression[]
 }
 
-export async function fetchLedger(): Promise<Ledger> {
+/**
+ * Failures that mean "ask again in a moment" rather than "this request was
+ * wrong".
+ *
+ * A token's `iat` is stamped by the auth server and checked by PostgREST, and
+ * those are two machines: a token minted a fraction of a second ago can reach
+ * a PostgREST whose clock is a touch behind and be rejected as issued in the
+ * future. It shows up on a cold start because that is when the app restores a
+ * session, refreshes the token and reads the whole ledger in the same breath —
+ * the one moment the token is new enough for a second of skew to matter. The
+ * same token works on the next attempt, so the right response is to make it
+ * rather than to put PostgREST's wording on screen.
+ */
+const TRANSIENT = /issued at future|not yet valid/i
+
+/** How long to wait before each retry. Four attempts over about three seconds. */
+const RETRY_DELAYS_MS = [250, 1000, 2000]
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/**
+ * Runs a read again while it fails for a reason that will pass on its own.
+ *
+ * Reads only: `fetchLedger` asks for whole tables and holds nothing, so
+ * repeating it costs a round trip and nothing else. A write is not repeatable
+ * that way — a retried save whose first attempt actually landed is a duplicate
+ * transaction — so writes surface the error and let the person press the
+ * button again.
+ *
+ * Exported for its test; callers want `fetchLedger`.
+ */
+export async function retryTransient<T>(
+  read: () => Promise<T>,
+  delaysMs: readonly number[] = RETRY_DELAYS_MS,
+): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await read()
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : String(caught)
+
+      if (attempt >= delaysMs.length || !TRANSIENT.test(message)) throw caught
+
+      await sleep(delaysMs[attempt])
+    }
+  }
+}
+
+export function fetchLedger(): Promise<Ledger> {
+  return retryTransient(readLedger)
+}
+
+async function readLedger(): Promise<Ledger> {
   const [accounts, budgets, transactions, imported, expressions] =
     await Promise.all([
       fetchAccounts(),

@@ -85,8 +85,10 @@ of the coverage is; `src/ui/*.test.tsx` covers the four screens with real logic
 in them — the dashboard's figures, the split editor's balancing, Setup's rule
 editing and imported-row corrections, and sign-in — rendered through
 `src/test/render.tsx` so they exercise the real theme. `App.tsx`, the
-data layer and the service-worker wiring aren't unit tested; verify those by
-running the app.
+data layer and the service-worker wiring aren't unit tested — a fake of
+PostgREST proves nothing — and are verified by running the app. The exception
+is `api.test.ts`, which covers the read retry policy: that one decides for
+itself whether to repeat a request, and nothing about it needs a server.
 
 ## Gotchas
 
@@ -126,6 +128,15 @@ running the app.
   right and then quietly wrong, which is this app's worst failure mode. If the
   row count ever does become a problem, fix it in `api.ts` with a date-bounded
   read and a stored opening balance — not by scattering queries through views.
+- **A cold start can be told its token is from the future.** `iat` is stamped
+  by the auth server and checked by PostgREST against its own clock, so a
+  just-minted token can lose a race with a fraction of a second of skew —
+  `JWT issued at future`. `fetchLedger` retries it (`retryTransient` in
+  `api.ts`), reads only: a repeated whole-table read costs a round trip, a
+  repeated write is a duplicate transaction. And until one read has landed the
+  app draws no screen, because a screen drawn from the empty starting ledger
+  says "no budgets yet" to somebody who has plenty. `docs/supabase.md` has the
+  longer version.
 - **The service worker caches the shell and no data.** The app opens instantly
   and offline; the ledger is always fetched fresh. A cached balance is one that
   can be wrong without saying so. Offline entry, if ever wanted, is an outbox —
