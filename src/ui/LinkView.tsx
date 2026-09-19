@@ -9,7 +9,11 @@ import {
   Text,
   TextInput,
 } from '@mantine/core'
-import { suggestLinks, unlinkedTransactions } from '../budget/linking'
+import {
+  matchesSearch,
+  suggestLinks,
+  unlinkedTransactions,
+} from '../budget/linking'
 import type { Budget, ImportedTransaction, Transaction } from '../budget/types'
 import { Amount } from './Amount'
 import { BudgetSelect } from './BudgetSelect'
@@ -45,6 +49,11 @@ interface LinkViewProps {
  * deleting a bank row is a correction, it belongs on Setup's imported rows
  * beside the other corrections, and it has no place on a screen whose rows
  * are meant to be tapped through quickly.
+ *
+ * The search narrows both lists — a statement's worth of rows is a lot to
+ * thumb past when what is wanted is the one coffee shop, or the $45 charge
+ * that needs a budget. It hides rows rather than forgetting them: a budget
+ * picked before the search was typed is still committed by the button.
  */
 export function LinkView({
   imported,
@@ -60,11 +69,20 @@ export function LinkView({
     Record<string, string | null>
   >({})
   const [notes, setNotes] = useState<Record<string, string>>({})
+  const [search, setSearch] = useState('')
 
   const unlinked = imported.filter((row) => row.transactionId === null)
   const suggestions = suggestLinks(
     imported,
     unlinkedTransactions(transactions, imported),
+  )
+
+  // Searching is a view onto the queue, so it is applied after the suggestions
+  // are computed rather than to their input: which pairs are proposed is a
+  // fact about the whole ledger, not about what is on screen.
+  const visible = unlinked.filter((row) => matchesSearch(row, search))
+  const visibleSuggestions = suggestions.filter((suggestion) =>
+    matchesSearch(suggestion.imported, search),
   )
 
   // Only rows still in the queue count: a choice made against a row that
@@ -125,11 +143,18 @@ export function LinkView({
         </Alert>
       )}
 
-      {suggestions.length > 0 && (
+      <TextInput
+        label="Search"
+        placeholder="Merchant or amount"
+        value={search}
+        onChange={(event) => setSearch(event.currentTarget.value)}
+      />
+
+      {visibleSuggestions.length > 0 && (
         <>
           <Text fw={600}>Looks like the same purchase, entered twice</Text>
 
-          {suggestions.map((suggestion) => (
+          {visibleSuggestions.map((suggestion) => (
             <Card key={suggestion.imported.id} withBorder padding="sm">
               <Stack gap="xs">
                 <Group justify="space-between" wrap="nowrap">
@@ -180,9 +205,21 @@ export function LinkView({
         </>
       )}
 
-      <Text fw={600}>Waiting to be budgeted ({unlinked.length})</Text>
+      <Text fw={600}>
+        Waiting to be budgeted (
+        {visible.length === unlinked.length
+          ? unlinked.length
+          : `${visible.length} of ${unlinked.length}`}
+        )
+      </Text>
 
-      {unlinked.map((row) => (
+      {visible.length === 0 && (
+        <Text size="sm" c="dimmed">
+          No rows match that search.
+        </Text>
+      )}
+
+      {visible.map((row) => (
         <Card key={row.id} withBorder padding="sm">
           <Stack gap="sm">
             <Group justify="space-between" wrap="nowrap" align="flex-start">

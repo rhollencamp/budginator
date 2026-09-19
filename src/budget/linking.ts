@@ -12,6 +12,7 @@
  * cent, the dates must be close, and a pair is only offered when neither side
  * has a better partner.
  */
+import { formatAmountInput } from './money'
 import type { ImportedTransaction, IsoDate, Transaction } from './types'
 
 /** How far apart a hand-entered date and a posting date may be, in days. */
@@ -99,4 +100,41 @@ export function unlinkedTransactions(
   )
 
   return transactions.filter((transaction) => !linked.has(transaction.id))
+}
+
+/**
+ * Whether a row is worth showing for a typed search — merchant text, or the
+ * amount. An empty query matches everything.
+ *
+ * The amount is matched against the plain `12.34` form, and as a prefix rather
+ * than a substring, so that typing a price narrows towards it: `12` finds
+ * `12.34` and `120.00` but not the cents of `9.12`. The sign is ignored unless
+ * the query carries one, because the queue is nearly all spending and nobody
+ * types the minus — `45` finds a $45 charge, while `-45` finds only a debit.
+ */
+export function matchesSearch(
+  row: Pick<ImportedTransaction, 'merchant' | 'amountCents'>,
+  query: string,
+): boolean {
+  const text = query.trim()
+  if (text === '') return true
+  if (row.merchant.toLowerCase().includes(text.toLowerCase())) return true
+
+  return matchesAmount(row.amountCents, text)
+}
+
+/**
+ * The amount half of `matchesSearch`. Anything that is not a plain figure —
+ * the currency symbol and thousands commas aside, which a pasted amount can
+ * carry — is not an amount search at all and matches nothing.
+ */
+function matchesAmount(cents: number, query: string): boolean {
+  const text = query.replace(/[$\s,]/g, '')
+  if (!/^-?(?=.*\d)\d*\.?\d*$/.test(text)) return false
+
+  const wantsDebit = text.startsWith('-')
+  if (wantsDebit && cents >= 0) return false
+
+  const figure = wantsDebit ? text.slice(1) : text
+  return formatAmountInput(Math.abs(cents)).startsWith(figure)
 }

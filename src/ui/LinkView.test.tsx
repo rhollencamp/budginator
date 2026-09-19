@@ -97,6 +97,45 @@ async function chooseBudget(
 }
 
 describe('LinkView', () => {
+  it('narrows the queue to a merchant, and to an amount', async () => {
+    const user = userEvent.setup()
+    setup()
+
+    const search = screen.getByLabelText('Search')
+    await user.type(search, 'shell')
+
+    expect(screen.getByText('Waiting to be budgeted (1 of 3)')).toBeTruthy()
+    expect(screen.queryByText('SUPERMARKET')).toBeNull()
+    expect(screen.getByText('SHELL OIL')).toBeTruthy()
+
+    await user.clear(search)
+    await user.type(search, '3.00')
+
+    expect(screen.getByText('CORNER SHOP')).toBeTruthy()
+    expect(screen.queryByText('SHELL OIL')).toBeNull()
+
+    await user.clear(search)
+    await user.type(search, 'nothing at all')
+    expect(screen.getByText('No rows match that search.')).toBeTruthy()
+  })
+
+  it('still budgets a row the search has since hidden', async () => {
+    const user = userEvent.setup()
+    const { onLinkToBudgets } = setup()
+
+    await chooseBudget(user, 'SUPERMARKET', '🛒 Groceries')
+    await user.type(screen.getByLabelText('Search'), 'shell')
+
+    await user.click(
+      screen.getByRole('button', { name: 'Budget 1 transaction' }),
+    )
+
+    await waitFor(() => expect(onLinkToBudgets).toHaveBeenCalledTimes(1))
+    expect(onLinkToBudgets).toHaveBeenCalledWith([
+      { importedId: 'i1', budgetId: 'groceries', note: '' },
+    ])
+  })
+
   it('budgets every chosen row in one call, with the notes that were typed', async () => {
     const user = userEvent.setup()
     const { onLinkToBudgets } = setup()
