@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   daysBetween,
+  matchesSearch,
   suggestLinks,
   unlinkedTransactions,
   MAX_LINK_DAYS,
@@ -113,5 +114,44 @@ describe('unlinkedTransactions', () => {
     )
 
     expect(result.map((transaction) => transaction.id)).toEqual(['t2'])
+  })
+})
+
+describe('matchesSearch', () => {
+  const row = { merchant: 'SHELL OIL 4471', amountCents: -4512 }
+
+  it('matches everything on an empty query', () => {
+    expect(matchesSearch(row, '   ')).toBe(true)
+  })
+
+  it('matches part of the merchant, ignoring case', () => {
+    expect(matchesSearch(row, 'shell')).toBe(true)
+    expect(matchesSearch(row, 'oil 44')).toBe(true)
+    expect(matchesSearch(row, 'supermarket')).toBe(false)
+  })
+
+  it('matches an amount from its start, whatever the sign', () => {
+    expect(matchesSearch(row, '45')).toBe(true)
+    expect(matchesSearch(row, '45.12')).toBe(true)
+    expect(matchesSearch(row, '$45.12')).toBe(true)
+    expect(matchesSearch(row, '-45.12')).toBe(true)
+    // The cents are not the start of the figure, and 4 is not 45.
+    expect(matchesSearch(row, '12')).toBe(false)
+    expect(matchesSearch(row, '46')).toBe(false)
+  })
+
+  it('does not offer a debit to a query that asked for a credit', () => {
+    expect(matchesSearch({ merchant: 'PAY', amountCents: -4512 }, '-45')).toBe(
+      true,
+    )
+    expect(matchesSearch({ merchant: 'PAY', amountCents: 4512 }, '-45')).toBe(
+      false,
+    )
+  })
+
+  it('reads a thousands comma, and refuses text that is not a figure', () => {
+    const big = { merchant: 'RENT', amountCents: -123456 }
+    expect(matchesSearch(big, '1,234.56')).toBe(true)
+    expect(matchesSearch(big, '12..3')).toBe(false)
   })
 })
