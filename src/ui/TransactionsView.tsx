@@ -157,7 +157,15 @@ export function TransactionsView({
                   const budget = budgetNames.get(split.budgetId)
 
                   return (
-                    <Badge key={split.id} radius="sm" variant="default">
+                    /* Taller than a badge's 20px default. The line the
+                       badge centres reserves room for a descender, and a
+                       budget name beside an amount has almost none, so the
+                       ink sits a fraction above the middle; at the default
+                       height that fraction is a fifth of the space above the
+                       text and the chip reads top-heavy. The renderer snaps a
+                       sub-pixel nudge away, so the fix is room rather than a
+                       shift. */
+                    <Badge key={split.id} radius="sm" variant="default" h={24}>
                       {budget ? `${budget.icon} ${budget.name}` : 'Unknown'}
                       {transaction.splits.length > 1 && (
                         <>
