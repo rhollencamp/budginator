@@ -21,8 +21,8 @@ the implementation, and it is a pure function of its inputs including the
 as-of date, which is why it can be tested without stubbing a clock.
 
 A budget with a zero allowance is a label rather than an envelope: it groups
-spending and reports the total, and the dashboard shows what has gone through it
-instead of a meaningless "available".
+spending and reports the total, and the dashboard shows no balance for it rather
+than a meaningless "available" — its month-by-month spend is still in the panel.
 
 ## Splits
 

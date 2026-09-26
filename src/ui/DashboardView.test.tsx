@@ -81,13 +81,13 @@ describe('DashboardView', () => {
     expect(screen.getByText(/❓ Misc/)).toBeInTheDocument()
   })
 
-  it('shows a spend total rather than a balance for a budget with no allowance', () => {
+  it('shows no balance for a budget with no allowance', () => {
     setup([misc], [transaction('t1', '2024-03-05', 'misc', -1234)])
 
-    // A zero-allowance budget has no envelope to run down, so the badge
-    // carries what has gone through it. The panel below also lists the month,
-    // so the assertion is scoped to the header the badge sits in.
-    expect(headerFor('Misc')).toContain('-$12.34')
+    // A zero-allowance budget has no envelope to run down, so its header
+    // carries no badge. The panel below still lists the month's spend, so the
+    // assertion is scoped to the header the badge would sit in.
+    expect(headerFor('Misc')).not.toContain('$')
   })
 
   it('carries a negative balance on the badge when an envelope is overdrawn', () => {
