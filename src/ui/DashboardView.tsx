@@ -69,21 +69,18 @@ export function DashboardView({
               </Text>
 
               {/* A budget with no monthly allowance has no balance to run
-                  down — it is a label for grouping spending — so it shows what
-                  has gone through it rather than a misleading "available". */}
-              <Badge
-                color={amountColor(summary.availableCents)}
-                radius="sm"
-                size="lg"
-              >
-                <Amount
-                  cents={
-                    summary.budget.amountCents === 0
-                      ? summary.spentCents
-                      : summary.availableCents
-                  }
-                />
-              </Badge>
+                  down — it is a label for grouping spending — so it gets no
+                  badge at all. Its months below still show what went through
+                  it. */}
+              {summary.budget.amountCents !== 0 && (
+                <Badge
+                  color={amountColor(summary.availableCents)}
+                  radius="sm"
+                  size="lg"
+                >
+                  <Amount cents={summary.availableCents} />
+                </Badge>
+              )}
             </Group>
           </Accordion.Control>
 
