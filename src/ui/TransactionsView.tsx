@@ -10,13 +10,12 @@ import {
   TextInput,
 } from '@mantine/core'
 import { amountForBudget, touchesBudget } from '../budget/transactions'
-import type { Budget, ImportedTransaction, Transaction } from '../budget/types'
+import type { Budget, Transaction } from '../budget/types'
 import { Amount } from './Amount'
 
 interface TransactionsViewProps {
   transactions: readonly Transaction[]
   budgets: readonly Budget[]
-  imported: readonly ImportedTransaction[]
   budgetId?: string
   onFilter: (budgetId?: string) => void
   onEdit: (transactionId: string) => void
@@ -34,7 +33,6 @@ interface TransactionsViewProps {
 export function TransactionsView({
   transactions,
   budgets,
-  imported,
   budgetId,
   onFilter,
   onEdit,
@@ -44,18 +42,6 @@ export function TransactionsView({
   const budgetNames = useMemo(
     () => new Map(budgets.map((budget) => [budget.id, budget])),
     [budgets],
-  )
-
-  // Which transactions came from the bank, so a linked one can say so: it
-  // cannot be freely edited without the two disagreeing.
-  const linkedIds = useMemo(
-    () =>
-      new Set(
-        imported
-          .map((row) => row.transactionId)
-          .filter((id): id is string => id !== null),
-      ),
-    [imported],
   )
 
   const query = search.trim().toLowerCase()
@@ -141,7 +127,6 @@ export function TransactionsView({
                 </Anchor>
                 <Text size="sm" c="dimmed">
                   {transaction.date}
-                  {linkedIds.has(transaction.id) && ' · from the bank'}
                 </Text>
               </Stack>
 
