@@ -77,8 +77,15 @@ reached from a menu, deep links into a private ledger are worth nothing, and an
 installed PWA relaunching at the top rather than on a half-finished screen is
 worth something. `Screen` carries its parameters in the value, so "transactions
 filtered to this budget" and "edit this transaction" are ordinary states rather
-than parsed strings. The views take plain data and callbacks; only `App.tsx`
-knows they are backed by a network.
+than parsed strings. Back and forward still work: `useScreenHistory.ts` pushes
+each `Screen` into `history.state` without touching the URL, so a fresh launch
+has no state and starts at the top while a reload in a tab stays put. The open
+drawer is an entry of its own, so Android's back button closes it; a screen
+that supersedes the last one — the list a save lands on, a new filter — replaces
+its entry rather than pushing, and an editor leaves by `goBack` so it returns to
+the list's filter and scroll position. Do not move the screen into the URL or a
+fragment. The views take plain data and callbacks; only `App.tsx` knows they are
+backed by a network.
 
 Tests live alongside the code they cover — Vitest with a jsdom environment
 (`vitest.config.ts`). `src/budget/*.test.ts` covers the domain and is where most
@@ -91,7 +98,8 @@ PostgREST proves nothing — and are verified by running the app. The exception
 are `api.test.ts`, which covers the read retry policy, and `useLedger.test.ts`,
 which covers the staleness window and which of two reads in flight wins: both
 decide for themselves whether to repeat a request, and nothing about either
-needs a server.
+needs a server. `useScreenHistory.test.ts` covers which moves push a history
+entry and which replace one, against jsdom's own history.
 
 ## Gotchas
 

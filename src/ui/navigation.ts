@@ -10,7 +10,8 @@
  *
  * `Screen` carries its parameters in the value rather than in a URL, so
  * "transactions, filtered to this budget" and "edit this transaction" are
- * ordinary states rather than parsed strings.
+ * ordinary states rather than parsed strings. Back and forward work anyway:
+ * `useScreenHistory` keeps each `Screen` in `history.state`, never the URL.
  */
 
 /** The screens the drawer lists, in the order it lists them. */

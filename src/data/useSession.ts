@@ -46,9 +46,14 @@ export function useSession(): SessionState {
       // A password sign-in puts nothing in the URL, but a recovery link
       // followed from the dashboard does. Strip it once it has been exchanged,
       // so a reload — or a bookmark, or the browser's session restore — does
-      // not replay a spent code.
+      // not replay a spent code. The entry's state is the screen the app is
+      // on, so it is carried over rather than cleared.
       if (session && window.location.search.includes('code=')) {
-        window.history.replaceState({}, '', window.location.pathname)
+        window.history.replaceState(
+          window.history.state,
+          '',
+          window.location.pathname,
+        )
       }
     })
 

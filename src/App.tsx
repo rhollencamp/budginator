@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import {
   Alert,
   Button,
@@ -27,7 +26,8 @@ import { SetupView } from './ui/SetupView'
 import { SignInView } from './ui/SignInView'
 import { TrackView } from './ui/TrackView'
 import { TransactionsView } from './ui/TransactionsView'
-import { HOME, screenTitle, type Screen, type View } from './ui/navigation'
+import { screenTitle, type Screen, type View } from './ui/navigation'
+import { useScreenHistory } from './ui/useScreenHistory'
 import { applyPwaUpdate } from './pwaUpdate'
 import { usePwaUpdate } from './usePwaUpdate'
 
@@ -45,18 +45,9 @@ function Shell() {
   const { ledger, loading, loadedOnce, refreshing, error, reload, run } =
     useLedger(signedIn)
 
-  const [screen, setScreen] = useState<Screen>(HOME)
-  const [menuOpened, setMenuOpened] = useState(false)
+  const { screen, menuOpened, go, goBack, openMenu, closeMenu } =
+    useScreenHistory()
   const updateReady = usePwaUpdate()
-
-  const go = (next: Screen) => {
-    setScreen(next)
-    setMenuOpened(false)
-    // Every screen change is a fresh page as far as the reader is concerned,
-    // and without this an editor opened from halfway down a long list starts
-    // halfway down itself.
-    window.scrollTo({ top: 0 })
-  }
 
   const openView = (view: View) => go({ view } as Screen)
 
@@ -98,7 +89,7 @@ function Shell() {
       <AppHeader
         title={screenTitle(screen)}
         menuOpened={menuOpened}
-        onToggleMenu={() => setMenuOpened((opened) => !opened)}
+        onToggleMenu={menuOpened ? closeMenu : openMenu}
         menuAttention={updateReady}
         busy={refreshing}
       />
@@ -107,11 +98,11 @@ function Shell() {
         opened={menuOpened}
         view={screen.view === 'editTransaction' ? null : screen.view}
         onSelect={openView}
-        onClose={() => setMenuOpened(false)}
+        onClose={closeMenu}
         updateReady={updateReady}
         unlinkedCount={unlinkedCount}
         onUpdate={() => {
-          setMenuOpened(false)
+          closeMenu()
           void applyPwaUpdate()
         }}
       />
@@ -147,6 +138,7 @@ function Shell() {
           <Screens
             screen={screen}
             go={go}
+            goBack={goBack}
             ledger={ledger}
             run={run}
             email={session.user.email}
@@ -161,7 +153,8 @@ function Shell() {
 
 interface ScreensProps {
   screen: Screen
-  go: (screen: Screen) => void
+  go: ReturnType<typeof useScreenHistory>['go']
+  goBack: (fallback: Screen) => void
   ledger: ReturnType<typeof useLedger>['ledger']
   run: ReturnType<typeof useLedger>['run']
   email?: string
@@ -172,7 +165,7 @@ interface ScreensProps {
  * plain data and callbacks — this is the only place that knows they are backed
  * by a database, which is what keeps them testable and replaceable.
  */
-function Screens({ screen, go, ledger, run, email }: ScreensProps) {
+function Screens({ screen, go, goBack, ledger, run, email }: ScreensProps) {
   switch (screen.view) {
     case 'dashboard':
       return (
@@ -211,7 +204,9 @@ function Screens({ screen, go, ledger, run, email }: ScreensProps) {
               }),
             )
           }
-          onSaved={(budgetId) => go({ view: 'transactions', budgetId })}
+          onSaved={(budgetId) =>
+            go({ view: 'transactions', budgetId }, { replace: true })
+          }
         />
       )
 
@@ -222,7 +217,9 @@ function Screens({ screen, go, ledger, run, email }: ScreensProps) {
           budgets={ledger.budgets}
           imported={ledger.imported}
           budgetId={screen.budgetId}
-          onFilter={(budgetId) => go({ view: 'transactions', budgetId })}
+          onFilter={(budgetId) =>
+            go({ view: 'transactions', budgetId }, { replace: true })
+          }
           onEdit={(transactionId) =>
             go({ view: 'editTransaction', transactionId })
           }
@@ -253,7 +250,7 @@ function Screens({ screen, go, ledger, run, email }: ScreensProps) {
           )}
           onSave={(input) => run(() => api.saveTransaction(input))}
           onDelete={(id) => run(() => api.deleteTransaction(id))}
-          onDone={() => go({ view: 'transactions' })}
+          onDone={() => goBack({ view: 'transactions' })}
         />
       )
     }
