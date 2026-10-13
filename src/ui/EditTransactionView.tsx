@@ -157,7 +157,12 @@ export function EditTransactionView({
         )}
 
         {linkedImport && (
-          <Alert variant="light" title="Linked to a bank transaction">
+          <Alert
+            color="yellow"
+            variant="light"
+            title="Linked to a bank transaction"
+            icon={<span aria-hidden="true">⚠</span>}
+          >
             <Text size="sm">
               The bank recorded <Amount cents={linkedImport.amountCents} /> on{' '}
               {linkedImport.date}
