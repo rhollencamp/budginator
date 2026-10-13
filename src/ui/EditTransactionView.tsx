@@ -165,7 +165,7 @@ export function EditTransactionView({
           >
             <Text size="sm">
               The bank recorded <Amount cents={linkedImport.amountCents} /> on{' '}
-              {linkedImport.date}
+              <span style={{ whiteSpace: 'nowrap' }}>{linkedImport.date}</span>
               {linkedImport.merchant && ` at ${linkedImport.merchant}`}.
               Changing the total or the date here will make the two disagree —
               split it across budgets instead.
