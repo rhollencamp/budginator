@@ -220,7 +220,6 @@ function Screens({ screen, go, ledger, run, email }: ScreensProps) {
         <TransactionsView
           transactions={ledger.transactions}
           budgets={ledger.budgets}
-          imported={ledger.imported}
           budgetId={screen.budgetId}
           onFilter={(budgetId) => go({ view: 'transactions', budgetId })}
           onEdit={(transactionId) =>
